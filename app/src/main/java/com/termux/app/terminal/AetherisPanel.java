@@ -32,7 +32,7 @@ import java.util.WeakHashMap;
 /** Aetheris INPUT/OUTPUT status cards driven by shell integration events (OSC 133 / 6973). */
 public class AetherisPanel {
 
-    private static class State {
+    static class State {
         String cwd = "";
         String branch = "";
         boolean running;
@@ -51,9 +51,10 @@ public class AetherisPanel {
 
     private final TermuxActivity mActivity;
     private final TextView mCwd, mBranch, mState, mExit;
-    private final WeakHashMap<TerminalSession, State> mStates = new WeakHashMap<>();
+    private static final WeakHashMap<TerminalSession, State> mStates = new WeakHashMap<>();
+    private static String sDraft = "";
     private final EditText mInput;
-    private final ArrayList<String> mHistory = new ArrayList<>();
+    private static final ArrayList<String> mHistory = new ArrayList<>();
     private int mHistPos = 0;
     private boolean mAlt = false;
     private boolean mInternalEdit = false;
@@ -76,7 +77,7 @@ public class AetherisPanel {
         });
         mInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void afterTextChanged(Editable e) {}
+            @Override public void afterTextChanged(Editable e) { sDraft = e.toString(); }
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (mInternalEdit || count != 1 || before != 0) return;
                 try {
@@ -95,7 +96,10 @@ public class AetherisPanel {
             }
         });
         applyMode(false);
+        if (!sDraft.isEmpty()) { mInternalEdit = true; mInput.setText(sDraft); mInput.setSelection(sDraft.length()); mInternalEdit = false; }
     }
+
+    public boolean isAlt() { return mAlt; }
 
     /** View that should receive the soft keyboard: INPUT card normally, terminal for full-screen programs. */
     public View getKeyboardTarget() {
@@ -121,8 +125,9 @@ public class AetherisPanel {
 
     private void applyMode(boolean alt) {
         TerminalView tv = mActivity.getTerminalView();
-        tv.setFocusable(alt);
-        tv.setFocusableInTouchMode(alt);
+        tv.setFocusable(true);
+        tv.setFocusableInTouchMode(true);
+        tv.mTextInputDisabled = !alt;
         mInput.setEnabled(!alt);
         mInput.setAlpha(alt ? 0.4f : 1f);
         mInput.setHint(alt ? "Chương trình toàn màn hình: gõ trực tiếp" : "Nhập lệnh…");
@@ -146,7 +151,7 @@ public class AetherisPanel {
         mInternalEdit = true;
         mInput.setText("");
         mInternalEdit = false;
-        session.write(line + "\r");
+        session.write(line.replace("\r\n", "\r").replace('\n', '\r') + "\r");
     }
 
     private void historyMove(int dir) {
@@ -200,6 +205,13 @@ public class AetherisPanel {
     }
 
     private void handle(TerminalSession session, int code, String param) {
+        State st = applyEvent(session, code, param);
+        if (session == mActivity.getCurrentSession()) render(st);
+        checkMode(session);
+    }
+
+    /** UI-independent state update; also called while the activity is gone (service client). */
+    public static State applyEvent(TerminalSession session, int code, String param) {
         State st = mStates.get(session);
         if (st == null) { st = new State(); mStates.put(session, st); }
         TerminalEmulator emu = session.getEmulator();
@@ -232,8 +244,7 @@ public class AetherisPanel {
                 }
             }
         }
-        if (session == mActivity.getCurrentSession()) render(st);
-        checkMode(session);
+        return st;
     }
 
     /** Re-renders the panel for the session now being displayed. */

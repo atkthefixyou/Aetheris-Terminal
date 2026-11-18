@@ -119,6 +119,9 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
         runStartForeground();
 
+        // Aetheris: keep CPU/Wi-Fi awake so sessions keep running with screen off or app closed.
+        actionAcquireWakeLock();
+
         SystemEventReceiver.registerPackageUpdateEvents(this);
     }
 

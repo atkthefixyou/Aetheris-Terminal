@@ -22,6 +22,11 @@ public class TermuxTerminalSessionServiceClient extends TermuxTerminalSessionCli
     }
 
     @Override
+    public void onShellIntegrationEvent(@NonNull TerminalSession session, int code, @NonNull String param) {
+        AetherisPanel.applyEvent(session, code, param);
+    }
+
+    @Override
     public void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
         TermuxSession termuxSession = mService.getTermuxSessionForTerminalSession(terminalSession);
         if (termuxSession != null)

@@ -103,19 +103,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
+            android:gravity="top"
             android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingTop="4dp"
                 android:text="❯"
                 android:textColor="@color/aetheris_cyan"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:typeface="monospace" />
 
-            <EditText
+            <com.termux.app.terminal.AetherisInput
                 android:id="@+id/aetheris_input"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -124,10 +125,12 @@
                 android:background="@null"
                 android:hint="Nhập lệnh…"
                 android:imeOptions="actionSend|flagNoExtractUi"
-                android:inputType="text|textNoSuggestions|textVisiblePassword"
-                android:maxLines="1"
+                android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
+                android:minLines="1"
+                android:maxLines="8"
+                android:gravity="top|start"
+                android:scrollbars="vertical"
                 android:paddingVertical="6dp"
-                android:singleLine="true"
                 android:textColor="@color/aetheris_input_text"
                 android:textColorHint="@color/aetheris_input_hint"
                 android:textCursorDrawable="@null"

@@ -305,8 +305,12 @@ public final class TerminalView extends View {
         return true;
     }
 
+    /** When true the view can be focused (long-press selection, scrolling) but never receives IME input. */
+    public boolean mTextInputDisabled = false;
+
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        if (mTextInputDisabled) return null;
         // Ensure that inputType is only set if TerminalView is selected view with the keyboard and
         // an alternate view is not selected, like an EditText. This is necessary if an activity is
         // initially started with the alternate view or if activity is returned to from another app
@@ -525,7 +529,7 @@ public final class TerminalView extends View {
 
     @Override
     public boolean onCheckIsTextEditor() {
-        return true;
+        return !mTextInputDisabled;
     }
 
     @Override

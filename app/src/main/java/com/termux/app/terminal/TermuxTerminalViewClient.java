@@ -232,6 +232,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     public void copyModeChanged(boolean copyMode) {
         // Disable drawer while copying.
         mActivity.getDrawer().setDrawerLockMode(copyMode ? DrawerLayout.LOCK_MODE_LOCKED_CLOSED : DrawerLayout.LOCK_MODE_UNLOCKED);
+        if (!copyMode) mActivity.requestInputFocus();
     }
 
 
@@ -612,6 +613,8 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         mActivity.getTerminalView().setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
+                // INPUT mode: terminal only gets focus for selection; keyboard belongs to the INPUT card.
+                if (mActivity.getAetherisPanel() != null && !mActivity.getAetherisPanel().isAlt()) return;
                 // Force show soft keyboard if TerminalView or toolbar text input view has
                 // focus and close it if they don't
                 boolean textInputViewHasFocus = false;
