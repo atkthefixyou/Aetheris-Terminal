@@ -1,244 +1,208 @@
-::: {align="center"}
-# ◈ AETHERIS TERMINAL
+<div align="center">
 
-### Your shell. Your workflow. Your universe.
+<img src="assets/aetheris-banner.png" alt="Aetheris Terminal — Less friction. More flow." width="100%">
 
-**Một không gian terminal Android được thiết kế cho những người thích
-kiểm soát từng dòng lệnh.**
+<br>
 
-*Tokyo Night · Cascadia Code · Developer-first · Built on the Termux
-foundation*
-:::
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
+[![Foundation](https://img.shields.io/badge/Foundation-Termux-222222?style=for-the-badge&logo=linux&logoColor=white)](https://termux.dev/)
+[![UI](https://img.shields.io/badge/Design-Tokyo%20Night-7C3AED?style=for-the-badge)](#-thiết-kế)
+[![Status](https://img.shields.io/badge/Status-In%20Development-00B8D9?style=for-the-badge)](#-trạng-thái-dự-án)
 
-------------------------------------------------------------------------
+### **Less friction. More flow. ◈**
 
-> **Aetheris Terminal đang trong quá trình phát triển.** README này mô
-> tả tầm nhìn và các mục tiêu thiết kế của dự án; những tính năng chưa
-> được triển khai hoặc kiểm thử không được xem là đã hoạt động.
+*Một terminal Android hiện đại — nơi sức mạnh của dòng lệnh gặp gỡ trải nghiệm được thiết kế có chủ đích.*
 
-## ✦ Giới thiệu
+[Giới thiệu](#-aetheris-terminal) · [Tính năng](#-điểm-nhấn) · [Roadmap](#-lộ-trình) · [Build](#-build-từ-source) · [Đóng góp](#-đóng-góp)
 
-**Aetheris Terminal** là dự án terminal Android hướng đến trải nghiệm
-hiện đại, tinh gọn và có thể cá nhân hóa sâu --- kết hợp nền tảng dòng
-lệnh quen thuộc của Termux với một giao diện mang dấu ấn riêng của
-Aetheris.
+</div>
 
-Mục tiêu không phải là biến terminal thành một món đồ trang trí. Mục
-tiêu là làm cho công việc trong terminal **rõ ràng hơn, dễ thao tác hơn
-và dễ đi theo hơn**, trong khi vẫn tôn trọng những hành vi cốt lõi mà
-người dùng Termux dựa vào mỗi ngày.
+---
 
--   **Terminal là trung tâm:** giao diện phục vụ công việc, không cản
-    trở công việc.
--   **Tương thích là ưu tiên:** giữ nguyên các hành vi nền tảng trước
-    khi thêm lớp trải nghiệm mới.
--   **Thiết kế có chủ đích:** phong cách neon tương lai vừa đủ, không
-    rối mắt.
--   **Minh bạch và có thể bảo trì:** thay đổi theo từng bước nhỏ, có
-    kiểm thử và có đường lui.
+## ◈ Aetheris Terminal
 
-## ✧ Triết lý thiết kế
+**Aetheris Terminal** là dự án terminal Android được phát triển trên nền tảng **Termux**, hướng đến một trải nghiệm làm việc hiện đại, gọn gàng và có thể cá nhân hóa — nhưng không đánh đổi những chức năng cốt lõi làm nên một terminal đáng tin cậy.
 
-  -----------------------------------------------------------------------
-  Thành phần                          Định hướng
-  ----------------------------------- -----------------------------------
-  **Visual language**                 Tokyo Night --- nền tối, tương phản
-                                      rõ, điểm nhấn neon tiết chế
+Aetheris không chỉ hướng đến việc thay áo cho giao diện. Tầm nhìn của dự án là tạo ra một không gian làm việc nơi người dùng có thể tập trung vào lệnh, mã nguồn và quy trình phát triển, với thông tin được sắp xếp rõ ràng và thao tác thường dùng nằm đúng nơi cần có.
 
-  **Typography**                      Cascadia Code --- ưu tiên khả năng
-                                      đọc mã và lệnh
+> **Triết lý:** Giao diện nên làm terminal dễ sử dụng hơn — không được trở thành lý do khiến terminal kém tin cậy hơn.
 
-  **Layout**                          Phân tách khu vực terminal, thông
-                                      tin thư mục hiện tại và thao tác
-                                      nhanh
+## ✦ Điểm nhấn
 
-  **Interaction**                     Các nút tiện ích hữu dụng, trạng
-                                      thái dễ nhận biết, hạn chế hiệu ứng
-                                      thừa
+<table>
+<tr>
+<td width="50%" valign="top">
 
-  **Philosophy**                      Đẹp để dùng lâu dài, không chỉ đẹp
-                                      trong ảnh chụp màn hình
-  -----------------------------------------------------------------------
+### 🎨 Giao diện có bản sắc
+Phong cách **Tokyo Night** với nền tối, điểm nhấn tím/xanh neon và độ tương phản được cân nhắc để tạo cảm giác hiện đại mà không gây nhiễu.
 
-## ⚡ Định hướng tính năng
+</td>
+<td width="50%" valign="top">
 
-> Danh sách dưới đây là mục tiêu thiết kế, không phải cam kết rằng tất
-> cả đã có mặt trong bản hiện tại.
+### ⌨️ Trải nghiệm terminal
+Ưu tiên luồng nhập lệnh, đầu ra và trạng thái phiên làm việc rõ ràng. Terminal vẫn là trung tâm của sản phẩm.
 
-### Terminal experience
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 
--   Giữ trải nghiệm shell tương tác và luồng nhập/xuất lệnh của nền tảng
-    gốc.
--   Hiển thị rõ vị trí làm việc hiện tại, bao gồm thư mục đang `cd` tới.
--   Phân biệt trực quan khu vực nhập lệnh và phần đầu ra.
--   Thao tác sao chép đầu ra nhanh chóng khi cần chia sẻ log hoặc gỡ
-    lỗi.
--   Hướng đến khả năng tùy biến prompt, màu sắc, phông chữ, bố cục và
-    Extra Keys.
+### 📁 Ngữ cảnh làm việc
+Định hướng hiển thị thư mục hiện tại, phân tách khu vực input/output và giúp người dùng nắm được mình đang làm việc ở đâu.
 
-### Developer workflow
+</td>
+<td width="50%" valign="top">
 
--   Tiếp tục hỗ trợ quy trình làm việc với shell, script và các công cụ
-    dòng lệnh tương thích.
--   Hướng đến trải nghiệm thuận tiện cho Git, SSH, chỉnh sửa mã và các
-    workflow phát triển trên Android.
--   Ưu tiên thay đổi nhỏ, dễ rà soát và dễ chẩn đoán khi phát sinh lỗi.
+### 📋 Thao tác nhanh
+Định hướng tích hợp các tiện ích như sao chép output, giúp chia sẻ log, lưu kết quả và gỡ lỗi thuận tiện hơn.
 
-### File access
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 
--   Giữ môi trường làm việc chính trong vùng dữ liệu riêng của ứng dụng.
--   Khi cần truy cập tệp bên ngoài, hướng đến tích hợp trình chọn tệp
-    Android (Storage Access Framework) thay vì chuyển toàn bộ môi trường
-    Linux sang bộ nhớ dùng chung.
--   Có thể xem xét cách đưa các thư mục dự án ra vùng chia sẻ theo nhu
-    cầu, nhưng không đánh đổi tính đúng đắn của môi trường terminal.
+### 🧩 Nền tảng quen thuộc
+Xây dựng trên cơ sở Termux, ưu tiên bảo toàn hành vi shell và công cụ dòng lệnh trong phạm vi tương thích đã được kiểm thử.
 
-## 🛡️ Nguyên tắc tương thích
+</td>
+<td width="50%" valign="top">
 
-Aetheris Terminal được định hướng phát triển dựa trên nền tảng Termux,
-vì vậy khả năng tương thích là yêu cầu nền tảng --- không phải tính năng
-phụ.
+### 🛠️ Dành cho người thích tùy biến
+Định hướng phát triển khả năng điều chỉnh giao diện, typography và bố cục để phù hợp với workflow của từng người dùng.
 
-Các nguyên tắc quan trọng:
+</td>
+</tr>
+</table>
 
-1.  **Giữ nguyên vai trò của `$HOME` và `$PREFIX`.** Hai đường dẫn này
-    phải tiếp tục hoạt động trong sandbox riêng của ứng dụng, phù hợp
-    với cách các gói và công cụ dòng lệnh mong đợi.
-2.  **Không phá vỡ nền tảng thực thi.** Shell, PTY, nhập/xuất, tiến
-    trình, quyền tệp, symlink, script và package manager cần được bảo
-    toàn.
-3.  **Ưu tiên lớp giao diện.** Branding và UI nên được tùy biến mà không
-    viết lại logic cốt lõi nếu không thực sự cần thiết.
-4.  **Cài song song khi có thể.** Package/application ID riêng được định
-    hướng để Aetheris có thể tồn tại bên cạnh Termux gốc, không buộc
-    người dùng bỏ môi trường đang sử dụng.
-5.  **Kiểm thử trước khi tuyên bố tương thích.** Không suy ra rằng mọi
-    gói, plugin hoặc workflow đều hoạt động chỉ vì ứng dụng khởi chạy
-    thành công.
+## 🎨 Thiết kế
 
-## 🧰 Công nghệ & nền tảng
+| Thành phần | Định hướng |
+|:--|:--|
+| **Visual language** | Tokyo Night — nền tối, tím điện và xanh cyan |
+| **Typography** | Cascadia Code — rõ ràng, phù hợp với nội dung kỹ thuật |
+| **Layout** | Tách bạch khu vực terminal, thư mục hiện tại và thao tác nhanh |
+| **Interaction** | Có mục đích, dễ hiểu, hạn chế hiệu ứng thừa |
+| **Nguyên tắc** | Đẹp để dùng hằng ngày, không chỉ đẹp trong ảnh demo |
 
--   **Nền tảng:** Android
--   **Cơ sở dự án:** Termux
--   **Phong cách giao diện:** Tokyo Night
--   **Phông chữ định hướng:** Cascadia Code
--   **Môi trường shell:** kế thừa và bảo toàn hành vi của nền tảng gốc
-    trong phạm vi tương thích
+## 🛡️ Tương thích là ưu tiên
 
-Chi tiết ngôn ngữ lập trình, phiên bản SDK, hệ thống build và các phụ
-thuộc cần được xác nhận theo cấu hình thực tế của repository.
+Vì Aetheris dựa trên nền tảng Termux, việc giữ ổn định môi trường dòng lệnh là nguyên tắc phát triển quan trọng.
 
-## 🚧 Trạng thái phát triển
+- **Bảo toàn `$HOME` và `$PREFIX`:** tránh thay đổi đường dẫn nền tảng theo cách làm hỏng công cụ hoặc gói đã cài.
+- **Tôn trọng hành vi shell:** nhập/xuất, PTY, tiến trình, script, quyền tệp và các hành vi liên quan cần được kiểm thử.
+- **Ưu tiên lớp giao diện:** tránh viết lại logic cốt lõi chỉ để đạt được hiệu ứng thị giác.
+- **Không tuyên bố tương thích khi chưa kiểm chứng:** việc ứng dụng khởi chạy không đồng nghĩa mọi package hay workflow đều hoạt động.
+- **Cài song song nếu kiến trúc cho phép:** tránh ghi đè môi trường Termux hiện có; cần xác minh package ID và quy trình lưu trữ trước khi phát hành.
 
-Aetheris được phát triển theo hướng **bảo toàn trước, cải tiến sau**.
+## 🧭 Lộ trình
 
--   [ ] Xác lập bản nền có thể build và chạy ổn định
--   [ ] Đổi branding và application ID mà không làm mất dữ liệu ngoài ý
-    muốn
--   [ ] Xác minh `$HOME`, `$PREFIX`, package manager và quyền tệp
--   [ ] Hoàn thiện bố cục terminal: input, output, thư mục hiện tại
--   [ ] Bổ sung thao tác sao chép output
--   [ ] Hoàn thiện màu sắc, typography và khả năng tùy biến giao diện
--   [ ] Kiểm thử shell tương tác, tiến trình dài hạn, script, Git và SSH
--   [ ] Viết hướng dẫn build, cài đặt, cập nhật và khôi phục rõ ràng
+<table>
+<tr>
+<td align="center" width="25%">
 
-*Đánh dấu từng mục khi đã triển khai và kiểm thử thực tế.*
+**01 · Foundation**
+
+`Nền tảng`
+
+Xác lập bản build ổn định, kiểm tra môi trường terminal và dữ liệu.
+
+</td>
+<td align="center" width="25%">
+
+**02 · Identity**
+
+`Bản sắc`
+
+Hoàn thiện branding, bảng màu, typography và bố cục.
+
+</td>
+<td align="center" width="25%">
+
+**03 · Workflow**
+
+`Quy trình`
+
+Cải thiện hiển thị thư mục, input/output và thao tác tiện ích.
+
+</td>
+<td align="center" width="25%">
+
+**04 · Reliability**
+
+`Độ tin cậy`
+
+Kiểm thử tương thích, cập nhật an toàn và tài liệu hóa phát hành.
+
+</td>
+</tr>
+</table>
+
+> Roadmap thể hiện định hướng phát triển. Hãy cập nhật trạng thái theo những gì đã được triển khai và kiểm thử thực tế.
 
 ## 🏗️ Build từ source
 
-Quy trình build chính xác phụ thuộc vào cấu trúc repository và phiên bản
-Android/Gradle đang dùng. Trước khi build, hãy đọc hướng dẫn trong
-repository và kiểm tra các yêu cầu môi trường.
+Quy trình cụ thể phụ thuộc vào cấu trúc repository, phiên bản Android SDK, JDK và hệ thống build mà dự án đang sử dụng.
 
-Quy trình tổng quát:
+1. Clone repository về máy.
+2. Đọc hướng dẫn build và kiểm tra các phiên bản công cụ được yêu cầu.
+3. Mở dự án bằng Android Studio hoặc sử dụng Gradle Wrapper nếu repository cung cấp.
+4. Build đúng variant theo cấu hình hiện tại.
+5. Cài trên thiết bị thử nghiệm và chạy checklist tương thích trước khi dùng làm môi trường chính.
 
-1.  Clone repository về máy.
-2.  Cài đặt đúng JDK, Android SDK và các phụ thuộc mà dự án yêu cầu.
-3.  Mở dự án bằng Android Studio hoặc dùng Gradle Wrapper nếu repository
-    cung cấp.
-4.  Build biến thể phù hợp theo cấu hình dự án.
-5.  Cài trên thiết bị thử nghiệm và chạy checklist tương thích trước khi
-    dùng làm môi trường chính.
+**Lưu ý:** Chưa đưa lệnh build cố định vào README vì cần đối chiếu cấu trúc source thực tế trước khi khẳng định lệnh nào chính xác.
 
-Không nên tự ý thay thế package, di chuyển `$HOME`/`$PREFIX` hoặc xóa dữ
-liệu môi trường hiện có trong quá trình thử nghiệm.
+## 🧪 Checklist phát hành
 
-## 🧪 Checklist kiểm thử đề xuất
-
-Trước mỗi bản phát hành, nên xác minh tối thiểu:
-
--   [ ] Ứng dụng khởi chạy và mở được phiên terminal.
--   [ ] Lệnh tương tác hoạt động đúng; đầu vào và đầu ra không bị mất
-    hoặc trộn sai.
--   [ ] Lệnh chạy lâu, tiến trình nền và thao tác ngắt tiến trình hoạt
-    động như mong đợi.
--   [ ] `pwd`, `cd`, quyền tệp, symlink và script hoạt động đúng.
--   [ ] Package manager có thể chạy trong môi trường được hỗ trợ.
--   [ ] Git và SSH hoạt động với cấu hình hợp lệ.
--   [ ] Sao chép output không làm thay đổi nội dung gốc.
--   [ ] Dữ liệu người dùng được giữ nguyên qua cập nhật.
--   [ ] Cài đặt song song không ghi đè dữ liệu của Termux gốc.
+- [ ] Ứng dụng khởi chạy và mở được phiên terminal.
+- [ ] Nhập lệnh, đầu ra và thao tác ngắt tiến trình hoạt động đúng.
+- [ ] `pwd`, `cd`, quyền tệp, symlink và script hoạt động đúng.
+- [ ] `$HOME` và `$PREFIX` được giữ nguyên theo thiết kế nền tảng.
+- [ ] Package manager hoạt động trong môi trường được hỗ trợ.
+- [ ] Git và SSH được kiểm tra với cấu hình hợp lệ.
+- [ ] Copy output không làm thay đổi nội dung.
+- [ ] Cập nhật không làm mất dữ liệu người dùng.
+- [ ] Cài song song không ghi đè dữ liệu của Termux gốc, nếu được hỗ trợ.
 
 ## 🤝 Đóng góp
 
-Đóng góp giúp Aetheris trở nên tốt hơn --- đặc biệt là các báo cáo lỗi
-có thể tái hiện, cải tiến khả năng sử dụng và kiểm thử tương thích.
+Aetheris Terminal có thể tốt hơn nhờ những báo cáo lỗi rõ ràng, đề xuất thiết thực và các đóng góp có thể kiểm thử.
 
-Khi gửi issue hoặc pull request, hãy cố gắng cung cấp:
+Khi mở Issue hoặc Pull Request, hãy cung cấp nếu có thể:
 
--   Thiết bị và phiên bản Android.
--   Các bước tái hiện lỗi.
--   Kết quả mong đợi và kết quả thực tế.
--   Log liên quan đã loại bỏ token, khóa riêng, mật khẩu và dữ liệu cá
-    nhân.
--   Phạm vi thay đổi cùng cách kiểm thử.
+- Thiết bị và phiên bản Android.
+- Các bước tái hiện vấn đề.
+- Kết quả mong đợi và kết quả thực tế.
+- Log đã loại bỏ token, mật khẩu, private key và dữ liệu cá nhân.
+- Mô tả thay đổi và cách bạn đã kiểm thử.
 
-**Một nguyên tắc quan trọng:** tránh những thay đổi lớn không cần thiết
-vào logic cốt lõi chỉ để đạt được một hiệu ứng giao diện.
+Vui lòng giữ các thay đổi tập trung, dễ rà soát và hạn chế tác động không cần thiết đến logic terminal cốt lõi.
 
 ## 🔐 An toàn & dữ liệu
 
-Terminal có thể truy cập tệp và chạy lệnh theo quyền mà Android cấp cho
-ứng dụng. Chỉ chạy script và cài gói từ nguồn bạn tin tưởng. Không chia
-sẻ log chứa access token, private key, mật khẩu hoặc dữ liệu nhạy cảm.
+Terminal có thể chạy lệnh và truy cập tệp trong phạm vi quyền được cấp cho ứng dụng. Chỉ chạy script và cài gói từ nguồn đáng tin cậy. Không đăng tải log chứa access token, mật khẩu, private key hoặc dữ liệu nhạy cảm.
 
-Aetheris không nên yêu cầu người dùng chuyển toàn bộ môi trường Linux
-sang bộ nhớ dùng chung chỉ để thuận tiện truy cập tệp. Hãy dùng cơ chế
-cấp quyền truy cập tệp phù hợp với Android khi cần.
+Khi cần truy cập tệp bên ngoài vùng riêng của ứng dụng, nên sử dụng cơ chế cấp quyền phù hợp với Android thay vì tùy tiện di chuyển toàn bộ môi trường Linux sang bộ nhớ dùng chung.
 
-## 🗺️ Roadmap
+## 📦 Trạng thái dự án
 
-**Phase 01 --- Foundation**\
-Ổn định bản nền, build được, chạy được và xác minh môi trường terminal
-cốt lõi.
+Aetheris Terminal đang được phát triển. Tính năng, khả năng tương thích, cách build và quy trình phát hành cần được xác nhận theo source code của từng phiên bản.
 
-**Phase 02 --- Identity**\
-Hoàn thiện thương hiệu Aetheris, bảng màu Tokyo Night, typography và bố
-cục giao diện.
+Nếu bạn muốn dùng Aetheris làm môi trường chính, hãy thử nghiệm trên bản sao lưu hoặc thiết bị thử nghiệm trước khi chuyển workflow quan trọng sang.
 
-**Phase 03 --- Workflow**\
-Cải thiện hiển thị thư mục hiện tại, phân tách input/output và các thao
-tác tiện ích.
+## 📜 Giấy phép
 
-**Phase 04 --- Reliability**\
-Kiểm thử tương thích, bảo toàn dữ liệu, cải thiện chẩn đoán lỗi và tài
-liệu hóa quy trình phát hành.
+Giấy phép phát hành cần được xác định dựa trên giấy phép của mã nguồn nền và các thành phần được phân phối cùng ứng dụng. Trước khi phát hành, hãy giữ đầy đủ thông báo bản quyền, giấy phép và yêu cầu ghi công bắt buộc. Không mặc định rằng toàn bộ dự án có thể sử dụng một giấy phép khác với các thành phần nền.
 
-Roadmap có thể thay đổi theo kết quả kiểm thử và mức độ ổn định của từng
-giai đoạn.
+---
 
-## 📜 License
+<div align="center">
 
-Giấy phép của Aetheris Terminal cần được xác định theo giấy phép của mã
-nguồn nền và các thành phần được phân phối cùng ứng dụng. Trước khi phát
-hành, hãy giữ lại các thông báo bản quyền, giấy phép và yêu cầu ghi công
-bắt buộc; không mặc định rằng toàn bộ dự án có thể đổi sang một giấy
-phép khác.
+### **AETHERIS TERMINAL**
 
-------------------------------------------------------------------------
+*Your shell. Your workflow. Your universe.*
 
-::: {align="center"}
-**AETHERIS TERMINAL**
+**Less friction. More flow. ◈**
 
-*Less friction. More flow.*
-:::
+<sub>Built with care on the Termux foundation.</sub>
+
+</div>
