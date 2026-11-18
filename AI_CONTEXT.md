@@ -37,3 +37,4 @@ Fork Termux (`termux-app` 8629e63, v0.118.0 baseline). Mục tiêu: cài song so
 ## Tương thích gói (xem docs/PREFIX_COMPAT.md)
 - Gói Termux chính thức chứa `/data/data/com.termux`; giải pháp: apt hook `DPkg::Pre-Install-Pkgs` viết lại .deb sau khi apt xác thực (`assets/aetheris-rewrite-debs.sh`, cài bởi `AetherisPanel.installPackageCompat`).
 - Test local: `tests/prefix-compat/test_rewrite.sh` (PASS). Chưa test trên thiết bị: gh/openssh thật.
+- Hook (824be43): trích với `umask 0`; chỉ chuẩn hóa 5 maintainer script (755) khi `dpkg-deb -b` từ chối quyền; symlink/thư mục → từ chối gói; giữ `<deb>.orig` (khôi phục: chép lại); container (gz/xz/zip/zstd/bz2) không vá, chỉ cảnh báo. Test: PASS; hook cũ fail 15. Chưa test gh/openssh thật trên thiết bị.
