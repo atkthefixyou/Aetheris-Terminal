@@ -182,13 +182,55 @@ public class AetherisPanel {
         }
     }
 
+    private static String readAsset(Context context, String name) throws java.io.IOException {
+        try (InputStream in = context.getAssets().open(name);
+             java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+            return bos.toString("UTF-8");
+        }
+    }
+
+    private static void writeText(File f, String text) throws java.io.IOException {
+        try (FileOutputStream os = new FileOutputStream(f)) {
+            os.write(text.getBytes("UTF-8"));
+        }
+    }
+
+    /**
+     * Package prefix compatibility: official Termux .deb files target /data/data/com.termux.
+     * Installs an apt hook (DPkg::Pre-Install-Pkgs) that rewrites each verified .deb to this
+     * app's prefix right before dpkg unpacks it. Idempotent; overwritten on every start.
+     */
+    public static void installPackageCompat(Context context) {
+        try {
+            String prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
+            if (!new File(prefix + "/etc").isDirectory()) return;
+            File libexec = new File(prefix + "/libexec/aetheris");
+            if (!libexec.isDirectory() && !libexec.mkdirs()) return;
+            File script = new File(libexec, "rewrite-debs");
+            writeText(script, readAsset(context, "aetheris-rewrite-debs.sh")
+                .replace("@PREFIX@", prefix)
+                .replace("@NEWPKG@", TermuxConstants.TERMUX_PACKAGE_NAME));
+            script.setExecutable(true, false);
+            File confDir = new File(prefix + "/etc/apt/apt.conf.d");
+            if (!confDir.isDirectory() && !confDir.mkdirs()) return;
+            String path = script.getAbsolutePath();
+            writeText(new File(confDir, "99aetheris-prefix"),
+                "DPkg::Pre-Install-Pkgs { \"" + path + "\"; };\n"
+                + "DPkg::Tools::Options::" + path + "::Version \"3\";\n");
+        } catch (Exception ignored) {
+        }
+    }
+
     /** Installs the shell integration script into $PREFIX/etc/profile.d if the prefix exists. */
     public static void installShellIntegration(Context context) {
+        installPackageCompat(context);
         try {
             File dir = new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc/profile.d");
             if (!new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc").isDirectory()) return;
             if (!dir.isDirectory() && !dir.mkdirs()) return;
-            try { new FileOutputStream(new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc/motd")).close(); } catch (Exception ignored) {}
             File out = new File(dir, "aetheris.sh");
             try (InputStream in = context.getAssets().open("aetheris-shell-integration.sh");
                  FileOutputStream os = new FileOutputStream(out)) {

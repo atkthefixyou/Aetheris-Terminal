@@ -33,3 +33,7 @@ Fork Termux (`termux-app` 8629e63, v0.118.0 baseline). Mục tiêu: cài song so
 - Script `aetheris.sh` (source cuối `.zshrc`/`.bashrc`): prompt rỗng, tắt echo, tắt zle/readline. `AETHERIS_PLAIN=1` để giữ prompt thường.
 - Font Cascadia Code (assets), chữ mặc định `#86A9DC`.
 - Chưa kiểm thử trên thiết bị: focus/IME, Ctrl+C, history, chuyển chế độ vim.
+
+## Tương thích gói (xem docs/PREFIX_COMPAT.md)
+- Gói Termux chính thức chứa `/data/data/com.termux`; giải pháp: apt hook `DPkg::Pre-Install-Pkgs` viết lại .deb sau khi apt xác thực (`assets/aetheris-rewrite-debs.sh`, cài bởi `AetherisPanel.installPackageCompat`).
+- Test local: `tests/prefix-compat/test_rewrite.sh` (PASS). Chưa test trên thiết bị: gh/openssh thật.
