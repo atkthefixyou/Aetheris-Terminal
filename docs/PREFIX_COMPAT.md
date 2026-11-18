@@ -23,6 +23,12 @@
    chỉ khớp nguyên thành phần đường dẫn (không đụng `com.termux.api`).
 3. Sửa đích symlink tuyệt đối, tạo lại `md5sums`.
 4. `dpkg-deb -b` lại, kiểm `dpkg-deb -I`, thay file nguyên tử. Lỗi ở bất kỳ bước nào → apt dừng trước khi dpkg chạy (fail closed).
+Lỗi `maintainer script 'postinst' has bad permissions 644/700` (đã sửa): `dpkg-deb -R` trích file theo `umask` của phiên (Termux dùng 077) và
+.deb gốc có script 0644/0700, còn `dpkg-deb -b` chỉ nhận script có quyền trong khoảng 0555..0775. Hook nay chỉ chuẩn hóa đúng 5 maintainer script
+(`preinst postinst prerm postrm config`) nếu quyền của chúng bị `dpkg-deb` từ chối (đặt 0755), từ chối gói nếu script là symlink/thư mục,
+trích gói với `umask 0` để quyền các file khác giữ nguyên, và vẫn để `dpkg-deb -b` tự kiểm tra. Hook không bao giờ chạy script của gói.
+File `.deb` gốc được giữ thành `<tên>.deb.orig` cạnh bản mới (tắt bằng `AETHERIS_KEEP_ORIG=0`; `apt clean` sẽ xoá). Lỗi in rõ tên gói và nguyên nhân.
+File nén/archive (magic gzip/xz/zip/zstd/bzip2) chứa đường dẫn cũ không bị sửa; hook in cảnh báo.
 Không dùng `--force-*`, không sửa DB dpkg, không đổi repo, không tắt kiểm chữ ký. Cơ sở dữ liệu dpkg ghi đúng đường dẫn `com.aether`.
 
 ## Kiểm thử
