@@ -27,3 +27,9 @@ Fork Termux (`termux-app` 8629e63, v0.118.0 baseline). Mục tiêu: cài song so
 - INPUT/OUTPUT: `AetherisPanel.java` nhận OSC 133 (A/B/C/D) và OSC 6973 (cwd;branch) qua `TerminalSessionClient.onShellIntegrationEvent` (hook trong `TerminalEmulator.doOsc`).
 - Script shell: `assets/aetheris-shell-integration.sh` → `$PREFIX/etc/profile.d/aetheris.sh`. zsh cần thêm vào `~/.zshrc`: `. $PREFIX/etc/profile.d/aetheris.sh`.
 - Chưa kiểm thử trên thiết bị: profile.d có được source không, Copy Output với output dài/cuộn.
+
+## Nhập lệnh qua thẻ INPUT (commit a83478b)
+- `AetherisPanel`: EditText gửi `line\r` vào PTY; terminal không focus (trừ khi alt-buffer: vim/htop → gõ trực tiếp). Extra keys UP/DOWN/LEFT/RIGHT/HOME/END/DEL điều khiển ô INPUT; TAB bị bỏ qua; CTRL+ký tự gửi mã điều khiển.
+- Script `aetheris.sh` (source cuối `.zshrc`/`.bashrc`): prompt rỗng, tắt echo, tắt zle/readline. `AETHERIS_PLAIN=1` để giữ prompt thường.
+- Font Cascadia Code (assets), chữ mặc định `#86A9DC`.
+- Chưa kiểm thử trên thiết bị: focus/IME, Ctrl+C, history, chuyển chế độ vim.
