@@ -245,6 +245,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         setTerminalToolbarView(savedInstanceState);
 
+        mAetherisPanel = new com.termux.app.terminal.AetherisPanel(this);
+        com.termux.app.terminal.AetherisPanel.installShellIntegration(this);
+
         setSettingsButtonView();
 
         setNewSessionButtonView();
@@ -403,6 +406,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         if (intent != null && intent.getExtras() != null) {
                             launchFailsafe = intent.getExtras().getBoolean(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
                         }
+                        com.termux.app.terminal.AetherisPanel.installShellIntegration(TermuxActivity.this);
                         mTermuxTerminalSessionActivityClient.addNewSession(launchFailsafe, null);
                     } catch (WindowManager.BadTokenException e) {
                         // Activity finished - ignore.
@@ -890,6 +894,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     @Nullable
+    private com.termux.app.terminal.AetherisPanel mAetherisPanel;
+
+    public com.termux.app.terminal.AetherisPanel getAetherisPanel() {
+        return mAetherisPanel;
+    }
+
     public TerminalSession getCurrentSession() {
         if (mTerminalView != null)
             return mTerminalView.getCurrentSession();

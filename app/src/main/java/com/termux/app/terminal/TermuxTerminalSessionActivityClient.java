@@ -302,6 +302,12 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         // be stale, like current session not selected or scrolled to.
         checkAndScrollToSession(session);
         updateBackgroundColor();
+        if (mActivity.getAetherisPanel() != null) mActivity.getAetherisPanel().refresh(session);
+    }
+
+    @Override
+    public void onShellIntegrationEvent(@NonNull TerminalSession session, int code, @NonNull String param) {
+        if (mActivity.getAetherisPanel() != null) mActivity.getAetherisPanel().onShellEvent(session, code, param);
     }
 
     void notifyOfSessionChange() {

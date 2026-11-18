@@ -2772,6 +2772,12 @@ public final class TerminalEmulator {
         }
 
         switch (value) {
+            case 133: // Shell integration marks (prompt/command/output/exit), used by Aetheris UI.
+            case 6973: // Aetheris: "cwd;branch" reported by the shell before each prompt.
+                if (mClient != null && mSession instanceof TerminalSession) {
+                    mClient.onShellIntegrationEvent((TerminalSession) mSession, value, textParameter);
+                }
+                break;
             case 0: // Change icon name and window title to T.
             case 1: // Change icon name to T.
             case 2: // Change window title to T.

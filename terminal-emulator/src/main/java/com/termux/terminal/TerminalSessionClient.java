@@ -12,6 +12,9 @@ public interface TerminalSessionClient {
 
     void onTextChanged(@NonNull TerminalSession changedSession);
 
+    /** OSC 133 / 6973 shell integration events. Default: ignored. */
+    default void onShellIntegrationEvent(@NonNull TerminalSession session, int code, @NonNull String param) {}
+
     void onTitleChanged(@NonNull TerminalSession changedSession);
 
     void onSessionFinished(@NonNull TerminalSession finishedSession);

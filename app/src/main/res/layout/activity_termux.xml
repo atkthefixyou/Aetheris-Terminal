@@ -26,22 +26,124 @@
             android:src="@drawable/aetheris_header"
             android:contentDescription="@null" />
 
-        <FrameLayout
+        <LinearLayout
+            android:id="@+id/aetheris_input_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/aetheris_header"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:background="@drawable/aetheris_card_bg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❯ INPUT"
+                android:textColor="@color/aetheris_cyan"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:typeface="monospace" />
+
+            <TextView
+                android:id="@+id/aetheris_cwd"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:singleLine="true"
+                android:ellipsize="start"
+                android:text="~"
+                android:textColor="@color/aetheris_cyan"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+
+            <TextView
+                android:id="@+id/aetheris_branch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                android:singleLine="true"
+                android:textColor="@color/aetheris_violet"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+
+            <TextView
+                android:id="@+id/aetheris_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="● READY"
+                android:textColor="#7FE08A"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+
+            <TextClock
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:format12Hour="HH:mm:ss"
+                android:format24Hour="HH:mm:ss"
+                android:textColor="#8A94B8"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/aetheris_terminal_card"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@+id/aetheris_header"
+            android:layout_below="@+id/aetheris_input_card"
             android:layout_above="@+id/terminal_toolbar_view_pager"
             android:layout_marginHorizontal="4dp"
             android:layout_marginVertical="4dp"
             android:padding="2dp"
+            android:orientation="vertical"
             android:background="@drawable/aetheris_card_bg"
             android:clipToOutline="true">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="▣ OUTPUT"
+                android:textColor="@color/aetheris_violet"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:typeface="monospace" />
+
+            <TextView
+                android:id="@+id/aetheris_copy_output"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Copy Output"
+                android:textColor="@color/aetheris_cyan"
+                android:textSize="12sp"
+                android:typeface="monospace"
+                android:background="@drawable/aetheris_button_bg" />
+        </RelativeLayout>
 
         <androidx.drawerlayout.widget.DrawerLayout
             android:id="@+id/drawer_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
             <com.termux.view.TerminalView
                 android:id="@+id/terminal_view"
@@ -114,7 +216,20 @@
 
         </androidx.drawerlayout.widget.DrawerLayout>
 
-        </FrameLayout>
+        <TextView
+            android:id="@+id/aetheris_exit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:singleLine="true"
+            android:text="— chưa có lệnh nào"
+            android:textColor="#8A94B8"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:typeface="monospace" />
+
+        </LinearLayout>
 
         <androidx.viewpager.widget.ViewPager
             android:id="@+id/terminal_toolbar_view_pager"
