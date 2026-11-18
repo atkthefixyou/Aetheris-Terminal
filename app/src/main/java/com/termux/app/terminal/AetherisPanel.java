@@ -290,14 +290,24 @@ public class AetherisPanel {
         State st = session == null ? null : mStates.get(session);
         TerminalEmulator emu = session == null ? null : session.getEmulator();
         String text = null;
-        if (st != null && emu != null && !emu.isAlternateBufferActive()) {
+        if (emu != null && !emu.isAlternateBufferActive()) {
             int t = emu.getScreen().getActiveTranscriptRows();
             int curAbs = emu.getCursorRow() + t;
-            int start = st.startAbs >= 0 ? st.startAbs : st.submitAbs;
-            int end = (st.startAbs >= 0 && st.endAbs >= 0) ? st.endAbs : (st.running ? curAbs : curAbs - 1);
-            if (start >= 0 && end >= start) {
-                text = emu.getScreen().getSelectedText(0, start - t, emu.mColumns, end - t);
-                if (text != null) text = text.replaceAll("\\s+$", "");
+            if (st != null) {
+                int start = st.startAbs >= 0 ? st.startAbs : st.submitAbs;
+                int end = (st.startAbs >= 0 && st.endAbs >= 0) ? st.endAbs : (st.running ? curAbs : curAbs - 1);
+                if (start >= 0 && end >= start) {
+                    text = trimEnd(emu.getScreen().getSelectedText(0, start - t, emu.mColumns, end - t));
+                }
+            }
+            if (text == null || text.isEmpty()) {
+                // Marks stale (screen cleared / redrawn): copy the visible screen above the prompt.
+                int last = emu.getCursorRow() - (emu.getCursorCol() == 0 ? 1 : 0);
+                last = Math.max(0, Math.min(emu.mRows - 1, last));
+                text = trimEnd(emu.getScreen().getSelectedText(0, 0, emu.mColumns, last));
+                if (text == null || text.isEmpty()) {
+                    text = trimEnd(emu.getScreen().getSelectedText(0, 0, emu.mColumns, emu.mRows - 1));
+                }
             }
         }
         if (text == null || text.isEmpty()) {
@@ -307,5 +317,9 @@ public class AetherisPanel {
         ClipboardManager cm = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
         cm.setPrimaryClip(ClipData.newPlainText("Aetheris output", text));
         Toast.makeText(mActivity, "Đã chép output", Toast.LENGTH_SHORT).show();
+    }
+
+    private static String trimEnd(String text) {
+        return text == null ? null : text.replaceAll("\\s+$", "");
     }
 }

@@ -1,5 +1,6 @@
 package com.termux.view;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -7,6 +8,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Handler;
@@ -27,6 +29,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityManager;
+import android.view.animation.DecelerateInterpolator;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
 import android.view.inputmethod.BaseInputConnection;
@@ -40,6 +43,7 @@ import androidx.annotation.RequiresApi;
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
+import com.termux.terminal.TextStyle;
 import com.termux.view.textselection.TextSelectionCursorController;
 
 /** View displaying and interacting with a {@link TerminalSession}. */
@@ -305,6 +309,62 @@ public final class TerminalView extends View {
         return true;
     }
 
+    // ---- Smooth output animation (Aetheris): new lines slide up and fade in. ----
+    /** Set false to get instant, original Termux rendering. */
+    public boolean mSmoothAnimations = true;
+    private static final int SMOOTH_DURATION_MS = 170;
+    private ValueAnimator mSmoothAnim;
+    private float mSmoothProgress = 1f;
+    private float mSlideStartPx = 0f;
+    private int mFadeFromRow = 0;
+    private int mFadeToRow = -1;
+    private int mPrevAbsCursor = -1;
+    private int mPrevTranscript = -1;
+    private final Paint mFadePaint = new Paint();
+
+    private void resetSmooth() {
+        if (mSmoothAnim != null) mSmoothAnim.cancel();
+        mSmoothProgress = 1f;
+        mSlideStartPx = 0f;
+        mFadeToRow = -1;
+    }
+
+    private void trackSmooth(int transcriptRows) {
+        if (!mSmoothAnimations || mEmulator == null || mEmulator.isAlternateBufferActive()
+            || isSelectingText() || mTopRow != 0) {
+            resetSmooth();
+            mPrevAbsCursor = -1;
+            return;
+        }
+        final int cursorRow = mEmulator.getCursorRow();
+        final int abs = cursorRow + transcriptRows;
+        if (mPrevAbsCursor >= 0) {
+            final int newLines = abs - mPrevAbsCursor;
+            final int scrolled = transcriptRows - mPrevTranscript;
+            if (newLines > 0 && newLines <= 12) {
+                final float lh = mRenderer.mFontLineSpacing;
+                final float current = mSlideStartPx * (1f - mSmoothProgress);
+                mSlideStartPx = Math.min(current + Math.max(0, scrolled) * lh, 2.5f * lh);
+                mFadeFromRow = Math.max(0, cursorRow - newLines);
+                mFadeToRow = cursorRow;
+                if (mSmoothAnim != null) mSmoothAnim.cancel();
+                mSmoothProgress = 0f;
+                mSmoothAnim = ValueAnimator.ofFloat(0f, 1f);
+                mSmoothAnim.setDuration(SMOOTH_DURATION_MS);
+                mSmoothAnim.setInterpolator(new DecelerateInterpolator(1.6f));
+                mSmoothAnim.addUpdateListener(a -> {
+                    mSmoothProgress = (float) a.getAnimatedValue();
+                    invalidate();
+                });
+                mSmoothAnim.start();
+            } else if (newLines > 12 || newLines < 0) {
+                resetSmooth();
+            }
+        }
+        mPrevAbsCursor = abs;
+        mPrevTranscript = transcriptRows;
+    }
+
     /** When true the view can be focused (long-press selection, scrolling) but never receives IME input. */
     public boolean mTextInputDisabled = false;
 
@@ -498,6 +558,8 @@ public final class TerminalView extends View {
         }
 
         mEmulator.clearScrollCounter();
+
+        trackSmooth(mEmulator.getScreen().getActiveTranscriptRows());
 
         invalidate();
         if (mAccessibilityEnabled) setContentDescription(getText());
@@ -1033,7 +1095,24 @@ public final class TerminalView extends View {
                 mTextSelectionCursorController.getSelectors(sel);
             }
 
+            final float slide = mSmoothProgress < 1f ? mSlideStartPx * (1f - mSmoothProgress) : 0f;
+            final boolean translated = slide > 0.5f;
+            if (translated) {
+                canvas.save();
+                canvas.translate(0, slide);
+            }
+
             mRenderer.render(mEmulator, canvas, mTopRow, sel[0], sel[1], sel[2], sel[3]);
+
+            if (mSmoothProgress < 1f && mFadeToRow >= mFadeFromRow) {
+                final int lh = mRenderer.mFontLineSpacing;
+                final int bg = mEmulator.mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND];
+                mFadePaint.setColor(bg);
+                mFadePaint.setAlpha((int) (200f * (1f - mSmoothProgress)));
+                canvas.drawRect(0, mFadeFromRow * lh, getWidth(), (mFadeToRow + 1) * lh, mFadePaint);
+            }
+
+            if (translated) canvas.restore();
 
             // render the text selection handles
             renderTextSelection();
