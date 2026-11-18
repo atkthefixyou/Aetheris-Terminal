@@ -4,16 +4,16 @@ Fork Termux (`termux-app` 8629e63, v0.118.0 baseline). Mục tiêu: cài song so
 
 ## Đã xác minh
 - Module: `app`, `terminal-emulator`, `terminal-view`, `termux-shared`. JDK 17, compileSdk 36, targetSdk 28, minSdk 21, NDK 29.0.14206865.
-- Bootstrap tải lúc build từ `termux-packages` (`apt-android-7` / `apt-android-5`).
-- CI: `.github/workflows/debug_build.yml`, chạy trên `main`, build thành công (run 44280955871), APK ở Artifacts.
+- Bootstrap tải lúc build từ `termux-packages`, tự patch prefix `com.termux`→`com.aether` (cùng độ dài) trong `app/build.gradle` (`patchBootstrap`).
+- CI: `.github/workflows/debug_build.yml` → Release `latest` → `aetheris.apk` (direct link, không zip).
 
 ## Đã đổi (commit 23652df)
-- `applicationId` = `com.aetheris.terminal` (namespace Java vẫn `com.termux`).
+- `applicationId` = `com.aether` (namespace Java vẫn `com.termux`).
 - `TERMUX_PACKAGE_NAME`, `TERMUX_APP_NAME`=Aetheris: `app/build.gradle`, `TermuxConstants.java`, 2 file `strings.xml`, `shortcuts.xml`.
-- Prefix: `/data/data/com.aetheris.terminal/files/usr`.
+- Prefix: `/data/data/com.aether/files/usr`.
 
 ## Rủi ro mở
-- Bootstrap chính thức dựng cho prefix `com.termux`: chưa kiểm chứng bootstrap/`pkg` chạy với prefix mới (có thể hỏng shebang, RPATH, config).
+- Gói cài thêm qua `pkg` từ repo Termux vẫn hardcode `com.termux` → có thể hỏng. Chưa kiểm chứng.
 - Chưa cài/chạy APK trên thiết bị; chưa có test hồi quy.
 - `sharedUserId` = package mới; chưa kiểm tra plugin Termux:* (khác package/chữ ký).
 
