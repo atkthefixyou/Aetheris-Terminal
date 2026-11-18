@@ -510,7 +510,16 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             }
             updateBackgroundColor();
 
-            final Typeface newTypeface = (fontFile.exists() && fontFile.length() > 0) ? Typeface.createFromFile(fontFile) : Typeface.MONOSPACE;
+            Typeface newTypeface;
+            if (fontFile.exists() && fontFile.length() > 0) {
+                newTypeface = Typeface.createFromFile(fontFile);
+            } else {
+                try {
+                    newTypeface = Typeface.createFromAsset(mActivity.getAssets(), "fonts/CascadiaMono-Regular.ttf");
+                } catch (Exception e) {
+                    newTypeface = Typeface.MONOSPACE;
+                }
+            }
             mActivity.getTerminalView().setTypeface(newTypeface);
         } catch (Exception e) {
             Logger.logStackTraceWithMessage(LOG_TAG, "Error in checkForFontAndColors()", e);
