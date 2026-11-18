@@ -40,6 +40,7 @@ public class AetherisPanel {
         long durationMs;
         long startNs;
         int startAbs = -1;
+        int submitAbs = -1;
         int endAbs = -1;
     }
 
@@ -134,6 +135,14 @@ public class AetherisPanel {
         String line = mInput.getText().toString();
         if (!line.trim().isEmpty() && (mHistory.isEmpty() || !mHistory.get(mHistory.size() - 1).equals(line))) mHistory.add(line);
         mHistPos = mHistory.size();
+        TerminalEmulator emu = session.getEmulator();
+        if (emu != null && !emu.isAlternateBufferActive()) {
+            State st = mStates.get(session);
+            if (st == null) { st = new State(); mStates.put(session, st); }
+            st.submitAbs = emu.getCursorRow() + 1 + emu.getScreen().getActiveTranscriptRows();
+            st.startAbs = -1;
+            st.endAbs = -1;
+        }
         mInternalEdit = true;
         mInput.setText("");
         mInternalEdit = false;
@@ -174,6 +183,7 @@ public class AetherisPanel {
             File dir = new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc/profile.d");
             if (!new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc").isDirectory()) return;
             if (!dir.isDirectory() && !dir.mkdirs()) return;
+            try { new FileOutputStream(new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/etc/motd")).close(); } catch (Exception ignored) {}
             File out = new File(dir, "aetheris.sh");
             try (InputStream in = context.getAssets().open("aetheris-shell-integration.sh");
                  FileOutputStream os = new FileOutputStream(out)) {
@@ -269,10 +279,15 @@ public class AetherisPanel {
         State st = session == null ? null : mStates.get(session);
         TerminalEmulator emu = session == null ? null : session.getEmulator();
         String text = null;
-        if (st != null && emu != null && !emu.isAlternateBufferActive() && st.startAbs >= 0 && st.endAbs >= st.startAbs) {
+        if (st != null && emu != null && !emu.isAlternateBufferActive()) {
             int t = emu.getScreen().getActiveTranscriptRows();
-            text = emu.getScreen().getSelectedText(0, st.startAbs - t, emu.mColumns, st.endAbs - t);
-            if (text != null) text = text.replaceAll("\\s+$", "");
+            int curAbs = emu.getCursorRow() + t;
+            int start = st.startAbs >= 0 ? st.startAbs : st.submitAbs;
+            int end = (st.startAbs >= 0 && st.endAbs >= 0) ? st.endAbs : (st.running ? curAbs : curAbs - 1);
+            if (start >= 0 && end >= start) {
+                text = emu.getScreen().getSelectedText(0, start - t, emu.mColumns, end - t);
+                if (text != null) text = text.replaceAll("\\s+$", "");
+            }
         }
         if (text == null || text.isEmpty()) {
             Toast.makeText(mActivity, "Không có output để chép", Toast.LENGTH_SHORT).show();
