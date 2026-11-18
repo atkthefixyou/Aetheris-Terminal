@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="aetheris_icon_bg">#021427</color>
+    <color name="aetheris_bg">#050B1F</color>
+    <color name="aetheris_panel">#0A1230</color>
+    <color name="aetheris_cyan">#22D3EE</color>
+    <color name="aetheris_violet">#A855F7</color>
+    <color name="aetheris_text">#E6EDF7</color>
+    <color name="aetheris_key_active">#66A855F7</color>
 </resources>

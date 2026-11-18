@@ -235,4 +235,7 @@
     <!-- Donate Preference -->
     <string name="donate_preference_title">Donate</string>
 
+
+    <string name="aetheris_footer_left">● Aetheris Terminal v1.0.0</string>
+    <string name="aetheris_footer_right">Dream Bigger. Code Better. ✨</string>
 </resources>
