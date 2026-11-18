@@ -35,9 +35,14 @@
             android:layout_marginTop="4dp"
             android:paddingHorizontal="12dp"
             android:paddingVertical="10dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:background="@drawable/aetheris_card_bg">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
 
             <TextView
                 android:layout_width="wrap_content"
@@ -92,6 +97,43 @@
                 android:textColor="#8A94B8"
                 android:textSize="12sp"
                 android:typeface="monospace" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❯"
+                android:textColor="@color/aetheris_cyan"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:typeface="monospace" />
+
+            <EditText
+                android:id="@+id/aetheris_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@null"
+                android:hint="Nhập lệnh…"
+                android:imeOptions="actionSend|flagNoExtractUi"
+                android:inputType="text|textNoSuggestions|textVisiblePassword"
+                android:maxLines="1"
+                android:paddingVertical="6dp"
+                android:singleLine="true"
+                android:textColor="@color/aetheris_input_text"
+                android:textColorHint="@color/aetheris_input_hint"
+                android:textCursorDrawable="@null"
+                android:textSize="15sp"
+                android:typeface="monospace" />
+        </LinearLayout>
         </LinearLayout>
 
         <LinearLayout

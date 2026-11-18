@@ -1,6 +1,6 @@
 # Third-party notices
 
-## Cascadia Mono (app/src/main/assets/fonts/CascadiaMono-Regular.ttf)
+## Cascadia Code (app/src/main/assets/fonts/CascadiaCode-Regular.ttf)
 
 Copyright (c) 2019-Present, Microsoft Corporation, with Reserved Font Name "Cascadia Code".
 Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org

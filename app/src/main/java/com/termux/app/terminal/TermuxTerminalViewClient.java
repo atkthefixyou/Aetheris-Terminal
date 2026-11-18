@@ -200,7 +200,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
         if (!term.isMouseTrackingActive() && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
             if (!KeyboardUtils.areDisableSoftKeyboardFlagsSet(mActivity))
-                KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
+                KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getKeyboardTarget());
             else
                 Logger.logVerbose(LOG_TAG, "Not showing soft keyboard onSingleTapUp since its disabled");
         }
@@ -546,9 +546,9 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
                 if(mShowSoftKeyboardWithDelayOnce) {
                     mShowSoftKeyboardWithDelayOnce = false;
                     mActivity.getTerminalView().postDelayed(getShowSoftKeyboardRunnable(), 500);
-                    mActivity.getTerminalView().requestFocus();
+                    mActivity.requestInputFocus();
                 } else
-                    KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
+                    KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getKeyboardTarget());
             }
         }
         // If soft keyboard toggle behaviour is show/hide
@@ -581,7 +581,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
             mActivity.getPreferences().isSoftKeyboardEnabledOnlyIfNoHardware())) {
             Logger.logVerbose(LOG_TAG, "Maintaining disabled soft keyboard");
             KeyboardUtils.disableSoftKeyboard(mActivity, mActivity.getTerminalView());
-            mActivity.getTerminalView().requestFocus();
+            mActivity.requestInputFocus();
             noShowKeyboard = true;
             // Delay is only required if onCreate() is called like when Termux app is exited with
             // double back press, not when Termux app is switched back from another app and keyboard
@@ -602,7 +602,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
                 KeyboardUtils.setSoftKeyboardAlwaysHiddenFlags(mActivity);
 
                 KeyboardUtils.hideSoftKeyboard(mActivity, mActivity.getTerminalView());
-                mActivity.getTerminalView().requestFocus();
+                mActivity.requestInputFocus();
                 noShowKeyboard = true;
                 // Required to keep keyboard hidden on app startup
                 mShowSoftKeyboardIgnoreOnce = true;
@@ -627,7 +627,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
                     Logger.logVerbose(LOG_TAG, "Hiding soft keyboard on focus change");
                 }
 
-                KeyboardUtils.setSoftKeyboardVisibility(getShowSoftKeyboardRunnable(), mActivity, mActivity.getTerminalView(), hasFocus || textInputViewHasFocus);
+                KeyboardUtils.setSoftKeyboardVisibility(getShowSoftKeyboardRunnable(), mActivity, mActivity.getKeyboardTarget(), hasFocus || textInputViewHasFocus);
             }
         });
 
@@ -640,7 +640,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
             // "Select URL" long press and returning to Termux app with back button. This
             // will also show keyboard even if it was closed before opening url. #2111
             Logger.logVerbose(LOG_TAG, "Requesting TerminalView focus and showing soft keyboard");
-            mActivity.getTerminalView().requestFocus();
+            mActivity.requestInputFocus();
             mActivity.getTerminalView().postDelayed(getShowSoftKeyboardRunnable(), 300);
         }
     }
@@ -648,7 +648,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     private Runnable getShowSoftKeyboardRunnable() {
         if (mShowSoftKeyboardRunnable == null) {
             mShowSoftKeyboardRunnable = () -> {
-                KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
+                KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getKeyboardTarget());
             };
         }
         return mShowSoftKeyboardRunnable;

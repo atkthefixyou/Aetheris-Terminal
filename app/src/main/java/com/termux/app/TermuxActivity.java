@@ -896,6 +896,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     @Nullable
     private com.termux.app.terminal.AetherisPanel mAetherisPanel;
 
+    public android.view.View getKeyboardTarget() {
+        return mAetherisPanel != null ? mAetherisPanel.getKeyboardTarget() : getTerminalView();
+    }
+
+    public void requestInputFocus() {
+        if (mAetherisPanel != null) mAetherisPanel.requestInputFocus(); else getTerminalView().requestFocus();
+    }
+
     public com.termux.app.terminal.AetherisPanel getAetherisPanel() {
         return mAetherisPanel;
     }

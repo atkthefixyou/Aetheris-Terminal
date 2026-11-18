@@ -118,7 +118,10 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     public void onTextChanged(@NonNull TerminalSession changedSession) {
         if (!mActivity.isVisible()) return;
 
-        if (mActivity.getCurrentSession() == changedSession) mActivity.getTerminalView().onScreenUpdated();
+        if (mActivity.getCurrentSession() == changedSession) {
+            mActivity.getTerminalView().onScreenUpdated();
+            if (mActivity.getAetherisPanel() != null) mActivity.getAetherisPanel().checkMode(changedSession);
+        }
     }
 
     @Override
@@ -521,7 +524,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
                 newTypeface = Typeface.createFromFile(fontFile);
             } else {
                 try {
-                    newTypeface = Typeface.createFromAsset(mActivity.getAssets(), "fonts/CascadiaMono-Regular.ttf");
+                    newTypeface = Typeface.createFromAsset(mActivity.getAssets(), "fonts/CascadiaCode-Regular.ttf");
                 } catch (Exception e) {
                     newTypeface = Typeface.MONOSPACE;
                 }

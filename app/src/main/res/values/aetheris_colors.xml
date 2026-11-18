@@ -7,4 +7,6 @@
     <color name="aetheris_violet">#A855F7</color>
     <color name="aetheris_text">#E6EDF7</color>
     <color name="aetheris_key_active">#66A855F7</color>
+    <color name="aetheris_input_text">#86A9DC</color>
+    <color name="aetheris_input_hint">#4E6490</color>
 </resources>

@@ -4,18 +4,28 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Color;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.shared.termux.TermuxConstants;
+import com.termux.shared.termux.extrakeys.SpecialButton;
+import com.termux.shared.view.KeyboardUtils;
+import com.termux.view.TerminalView;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.WeakHashMap;
 
@@ -41,6 +51,11 @@ public class AetherisPanel {
     private final TermuxActivity mActivity;
     private final TextView mCwd, mBranch, mState, mExit;
     private final WeakHashMap<TerminalSession, State> mStates = new WeakHashMap<>();
+    private final EditText mInput;
+    private final ArrayList<String> mHistory = new ArrayList<>();
+    private int mHistPos = 0;
+    private boolean mAlt = false;
+    private boolean mInternalEdit = false;
 
     public AetherisPanel(TermuxActivity activity) {
         mActivity = activity;
@@ -49,6 +64,108 @@ public class AetherisPanel {
         mState = activity.findViewById(R.id.aetheris_state);
         mExit = activity.findViewById(R.id.aetheris_exit);
         activity.findViewById(R.id.aetheris_copy_output).setOnClickListener(v -> copyOutput());
+
+        mInput = activity.findViewById(R.id.aetheris_input);
+        mInput.setOnEditorActionListener((v, actionId, ev) -> { submit(); return true; });
+        mInput.setOnKeyListener((v, keyCode, ev) -> {
+            if (keyCode == KeyEvent.KEYCODE_ENTER && ev.getAction() == KeyEvent.ACTION_DOWN) { submit(); return true; }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_UP && ev.getAction() == KeyEvent.ACTION_DOWN) { historyMove(-1); return true; }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && ev.getAction() == KeyEvent.ACTION_DOWN) { historyMove(1); return true; }
+            return false;
+        });
+        mInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void afterTextChanged(Editable e) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (mInternalEdit || count != 1 || before != 0) return;
+                try {
+                    Boolean ctrl = mActivity.getExtraKeysView().readSpecialButton(SpecialButton.CTRL, true);
+                    if (Boolean.TRUE.equals(ctrl)) {
+                        char ch = s.charAt(start);
+                        mInternalEdit = true;
+                        mInput.getText().delete(start, start + 1);
+                        mInternalEdit = false;
+                        TerminalSession sess = mActivity.getCurrentSession();
+                        if (sess != null) sess.write(String.valueOf((char) (Character.toLowerCase(ch) & 0x1f)));
+                    }
+                } catch (Exception ignored) {
+                    mInternalEdit = false;
+                }
+            }
+        });
+        applyMode(false);
+    }
+
+    /** View that should receive the soft keyboard: INPUT card normally, terminal for full-screen programs. */
+    public View getKeyboardTarget() {
+        return mAlt ? mActivity.getTerminalView() : mInput;
+    }
+
+    public void requestInputFocus() {
+        (mAlt ? (View) mActivity.getTerminalView() : mInput).requestFocus();
+    }
+
+    /** Called when terminal text changes: switches input between the INPUT card and the terminal (vim, htop...). */
+    public void checkMode(TerminalSession session) {
+        if (session != mActivity.getCurrentSession()) return;
+        TerminalEmulator emu = session.getEmulator();
+        boolean alt = emu != null && emu.isAlternateBufferActive();
+        if (alt != mAlt) {
+            mAlt = alt;
+            applyMode(alt);
+            if (alt) KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
+            else KeyboardUtils.showSoftKeyboard(mActivity, mInput);
+        }
+    }
+
+    private void applyMode(boolean alt) {
+        TerminalView tv = mActivity.getTerminalView();
+        tv.setFocusable(alt);
+        tv.setFocusableInTouchMode(alt);
+        mInput.setEnabled(!alt);
+        mInput.setAlpha(alt ? 0.4f : 1f);
+        mInput.setHint(alt ? "Chương trình toàn màn hình: gõ trực tiếp" : "Nhập lệnh…");
+        if (alt) tv.requestFocus(); else mInput.requestFocus();
+    }
+
+    private void submit() {
+        TerminalSession session = mActivity.getCurrentSession();
+        if (session == null) return;
+        String line = mInput.getText().toString();
+        if (!line.trim().isEmpty() && (mHistory.isEmpty() || !mHistory.get(mHistory.size() - 1).equals(line))) mHistory.add(line);
+        mHistPos = mHistory.size();
+        mInternalEdit = true;
+        mInput.setText("");
+        mInternalEdit = false;
+        session.write(line + "\r");
+    }
+
+    private void historyMove(int dir) {
+        if (mHistory.isEmpty()) return;
+        mHistPos = Math.max(0, Math.min(mHistory.size(), mHistPos + dir));
+        String t = mHistPos == mHistory.size() ? "" : mHistory.get(mHistPos);
+        mInternalEdit = true;
+        mInput.setText(t);
+        mInput.setSelection(t.length());
+        mInternalEdit = false;
+    }
+
+    /** Extra-keys interception while typing in the INPUT card. Returns true if consumed. */
+    public boolean handleExtraKey(String key) {
+        if (mAlt) return false;
+        int len = mInput.getText().length();
+        int sel = Math.max(0, mInput.getSelectionStart());
+        switch (key) {
+            case "UP": historyMove(-1); return true;
+            case "DOWN": historyMove(1); return true;
+            case "LEFT": mInput.setSelection(Math.max(0, sel - 1)); return true;
+            case "RIGHT": mInput.setSelection(Math.min(len, sel + 1)); return true;
+            case "HOME": mInput.setSelection(0); return true;
+            case "END": mInput.setSelection(len); return true;
+            case "DEL": if (sel < len) mInput.getText().delete(sel, sel + 1); return true;
+            case "TAB": return true;
+            default: return false;
+        }
     }
 
     /** Installs the shell integration script into $PREFIX/etc/profile.d if the prefix exists. */
@@ -106,12 +223,14 @@ public class AetherisPanel {
             }
         }
         if (session == mActivity.getCurrentSession()) render(st);
+        checkMode(session);
     }
 
     /** Re-renders the panel for the session now being displayed. */
     public void refresh(TerminalSession session) {
         State st = session == null ? null : mStates.get(session);
         render(st == null ? new State() : st);
+        if (session != null) checkMode(session);
     }
 
     private void render(State st) {

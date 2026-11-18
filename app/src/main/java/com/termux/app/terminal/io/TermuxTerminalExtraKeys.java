@@ -84,6 +84,10 @@ public class TermuxTerminalExtraKeys extends TerminalExtraKeys {
     @SuppressLint("RtlHardcoded")
     @Override
     public void onTerminalExtraKeyButtonClick(View view, String key, boolean ctrlDown, boolean altDown, boolean shiftDown, boolean fnDown) {
+        if (mTermuxTerminalViewClient != null && mTermuxTerminalViewClient.getActivity().getAetherisPanel() != null
+            && !"KEYBOARD".equals(key) && mTermuxTerminalViewClient.getActivity().getAetherisPanel().handleExtraKey(key)) {
+            return;
+        }
         if ("KEYBOARD".equals(key)) {
             if(mTermuxTerminalViewClient != null)
                 mTermuxTerminalViewClient.onToggleSoftKeyboardRequest();
