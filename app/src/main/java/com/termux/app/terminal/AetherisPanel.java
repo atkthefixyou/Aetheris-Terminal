@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.WeakHashMap;
 
@@ -153,7 +154,149 @@ public class AetherisPanel {
         mInternalEdit = true;
         mInput.setText("");
         mInternalEdit = false;
-        session.write(line.replace("\r\n", "\r").replace('\n', '\r') + "\r");
+        State cur = mStates.get(session);
+        boolean busy = cur != null && cur.running;
+        boolean alt = emu != null && emu.isAlternateBufferActive();
+        if (busy || alt) {
+            // Chuong trinh dang chay doc stdin: gui nguyen van.
+            session.write(line.replace("\r\n", "\r").replace('\n', '\r') + "\r");
+            return;
+        }
+        List<String> cmds = splitCommands(line);
+        if (cmds.isEmpty()) { session.write("\r"); return; }
+        Queue q = mQueues.get(session);
+        if (q == null) { q = new Queue(); mQueues.put(session, q); }
+        q.pending.clear();
+        for (int i = 1; i < cmds.size(); i++) q.pending.add(cmds.get(i));
+        sendCommand(session, cmds.get(0), q);
+    }
+
+    // ---- Chay tung lenh: moi lenh (khoi) gui sau khi lenh truoc ket thuc (OSC 133;D) ----
+    private static class Queue {
+        final java.util.ArrayDeque<String> pending = new java.util.ArrayDeque<>();
+        boolean awaitingStart;
+    }
+    private static final java.util.Map<TerminalSession, Queue> mQueues = new java.util.WeakHashMap<>();
+    private static final android.os.Handler sHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private static void sendCommand(final TerminalSession session, String cmd, final Queue q) {
+        TerminalEmulator emu = session.getEmulator();
+        State st = mStates.get(session);
+        if (st == null) { st = new State(); mStates.put(session, st); }
+        if (emu != null && !emu.isAlternateBufferActive()) {
+            st.submitAbs = emu.getCursorRow() + 1 + emu.getScreen().getActiveTranscriptRows();
+            st.startAbs = -1;
+            st.endAbs = -1;
+        }
+        q.awaitingStart = true;
+        session.write(cmd.replace("\r\n", "\r").replace('\n', '\r') + "\r");
+        if (!q.pending.isEmpty()) {
+            // Du phong: lenh khong sinh su kien (vd. chi la comment) thi van chay tiep.
+            sHandler.postDelayed(() -> {
+                if (q.awaitingStart) { q.awaitingStart = false; pump(session); }
+            }, 2500);
+        }
+    }
+
+    private static void pump(TerminalSession session) {
+        Queue q = mQueues.get(session);
+        if (q == null || q.pending.isEmpty()) return;
+        sendCommand(session, q.pending.poll(), q);
+    }
+
+    /** Tach thanh cac lenh hoan chinh; khoi nhieu dong (if/for/heredoc/quote/\) giu nguyen. */
+    static List<String> splitCommands(String text) {
+        List<String> out = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        Splitter sp = new Splitter();
+        for (String line : text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
+            if (cur.length() == 0 && sp.idle() && (line.trim().isEmpty() || line.trim().startsWith("#"))) continue;
+            if (cur.length() > 0) cur.append('\n');
+            cur.append(line);
+            if (sp.feed(line)) { out.add(cur.toString()); cur.setLength(0); sp = new Splitter(); }
+        }
+        if (cur.length() > 0) out.add(cur.toString());
+        return out;
+    }
+
+    private static class Splitter {
+        int depth, paren;
+        char q;
+        boolean cont, cmdStart;
+        final List<String> heredocs = new ArrayList<>();
+        boolean heredocTrim;
+
+        boolean idle() { return depth == 0 && paren == 0 && q == 0 && !cont && heredocs.isEmpty(); }
+
+        boolean feed(String line) {
+            if (!heredocs.isEmpty()) {
+                String t = heredocTrim ? line.replaceAll("^\\t+", "") : line;
+                if (t.equals(heredocs.get(0))) heredocs.remove(0);
+                return idle();
+            }
+            cont = false;
+            cmdStart = q == 0;
+            StringBuilder w = new StringBuilder();
+            int n = line.length();
+            for (int i = 0; i < n; i++) {
+                char c = line.charAt(i);
+                if (q != 0) {
+                    if (q == '\'') { if (c == '\'') q = 0; }
+                    else if (c == '\\') i++;
+                    else if (c == '"') q = 0;
+                    continue;
+                }
+                if (c == '\\') {
+                    if (i == n - 1) cont = true; else i++;
+                    w.append('x'); cmdStart = false;
+                } else if (c == '\'' || c == '"') {
+                    word(w); q = c; cmdStart = false;
+                } else if (c == '#' && w.length() == 0) {
+                    break;
+                } else if (c == ';' || c == '&' || c == '|') {
+                    word(w); cmdStart = true;
+                } else if (c == '(') {
+                    word(w); paren++; cmdStart = true;
+                } else if (c == ')') {
+                    word(w); if (paren > 0) paren--;
+                } else if (c == '{' && w.length() == 0 && (i == n - 1 || Character.isWhitespace(line.charAt(i + 1)))) {
+                    depth++; cmdStart = true;
+                } else if (c == '}' && w.length() == 0 && depth > 0 && (i == n - 1 || ";&| \t)".indexOf(line.charAt(i + 1)) >= 0)) {
+                    depth--; cmdStart = false;
+                } else if (c == '<' && i + 1 < n && line.charAt(i + 1) == '<' && !(i + 2 < n && line.charAt(i + 2) == '<')) {
+                    word(w);
+                    int j = i + 2;
+                    boolean trim = false;
+                    if (j < n && line.charAt(j) == '-') { trim = true; j++; }
+                    while (j < n && line.charAt(j) == ' ') j++;
+                    StringBuilder d = new StringBuilder();
+                    while (j < n && "'\"\\".indexOf(line.charAt(j)) >= 0) j++;
+                    while (j < n && " \t;|&<>'\")".indexOf(line.charAt(j)) < 0) d.append(line.charAt(j++));
+                    while (j < n && (line.charAt(j) == '\'' || line.charAt(j) == '"')) j++;
+                    if (d.length() > 0) { heredocs.add(d.toString()); heredocTrim = trim; }
+                    i = j - 1;
+                } else if (Character.isWhitespace(c)) {
+                    word(w);
+                } else {
+                    w.append(c);
+                }
+            }
+            word(w);
+            return idle();
+        }
+
+        private void word(StringBuilder w) {
+            if (w.length() == 0) return;
+            String s = w.toString();
+            w.setLength(0);
+            if (!cmdStart) return;
+            switch (s) {
+                case "if": case "for": case "while": case "until": case "case": case "select": depth++; break;
+                case "then": case "do": case "else": case "elif": case "!": case "time": break;
+                case "fi": case "done": case "esac": if (depth > 0) depth--; cmdStart = false; break;
+                default: cmdStart = false;
+            }
+        }
     }
 
     private void historyMove(int dir) {
@@ -268,6 +411,8 @@ public class AetherisPanel {
             char kind = param.charAt(0);
             if (kind == 'C') {
                 st.running = true;
+                Queue aq = mQueues.get(session);
+                if (aq != null) aq.awaitingStart = false;
                 st.startNs = System.nanoTime();
                 st.startAbs = -1;
                 st.endAbs = -1;
@@ -285,6 +430,11 @@ public class AetherisPanel {
                 if (emu != null && st.startAbs >= 0) {
                     int endAbs = emu.getCursorRow() + emu.getScreen().getActiveTranscriptRows();
                     st.endAbs = emu.getCursorCol() == 0 ? endAbs - 1 : endAbs;
+                }
+                Queue dq = mQueues.get(session);
+                if (dq != null) {
+                    if (st.exit == 130) dq.pending.clear(); // Ctrl+C dung ca chuoi
+                    else sHandler.post(() -> pump(session));
                 }
             }
         }
