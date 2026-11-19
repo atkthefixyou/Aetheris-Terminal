@@ -44,7 +44,7 @@ android {
         applicationId "com.aether"
         minSdkVersion project.properties.minSdkVersion.toInteger()
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
-        versionCode 118
+        versionCode (System.getenv("GITHUB_RUN_NUMBER") ? 1000 + System.getenv("GITHUB_RUN_NUMBER").toInteger() : 118)
         versionName "0.118.0"
 
         if (appVersionName) versionName = appVersionName
