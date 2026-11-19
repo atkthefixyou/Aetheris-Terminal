@@ -145,7 +145,7 @@ public final class TerminalView extends View {
 
             @Override
             public boolean onUp(MotionEvent event) {
-                mScrollRemainder = 0.0f;
+                if (usePixelScroll()) post(mSnapRunnable); else mScrollRemainder = 0.0f;
                 if (mEmulator != null && mEmulator.isMouseTrackingActive() && !event.isFromSource(InputDevice.SOURCE_MOUSE) && !isSelectingText() && !scrolledWithFinger) {
                     // Quick event processing when mouse tracking is active - do not wait for check of double tapping
                     // for zooming.
@@ -181,10 +181,15 @@ public final class TerminalView extends View {
                     sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED, true);
                 } else {
                     scrolledWithFinger = true;
-                    distanceY += mScrollRemainder;
-                    int deltaRows = (int) (distanceY / mRenderer.mFontLineSpacing);
-                    mScrollRemainder = distanceY - deltaRows * mRenderer.mFontLineSpacing;
-                    doScroll(e, deltaRows);
+                    if (usePixelScroll()) {
+                        mScroller.forceFinished(true);
+                        scrollToPixel(currentPixelPos() + distanceY);
+                    } else {
+                        distanceY += mScrollRemainder;
+                        int deltaRows = (int) (distanceY / mRenderer.mFontLineSpacing);
+                        mScrollRemainder = distanceY - deltaRows * mRenderer.mFontLineSpacing;
+                        doScroll(e, deltaRows);
+                    }
                 }
                 return true;
             }
@@ -201,6 +206,15 @@ public final class TerminalView extends View {
             public boolean onFling(final MotionEvent e2, float velocityX, float velocityY) {
                 if (mEmulator == null) return true;
                 // Do not start scrolling until last fling has been taken care of:
+                if (usePixelScroll()) {
+                    // Pixel-based fling: same speed as the row-based one, but no per-row stepping.
+                    mScroller.forceFinished(true);
+                    final int lh = mRenderer.mFontLineSpacing;
+                    mScroller.fling(0, Math.round(currentPixelPos()), 0, -(int) (velocityY * 0.25f * lh), 0, 0,
+                        -mEmulator.getScreen().getActiveTranscriptRows() * lh, 0);
+                    postOnAnimation(mPixelScrollRunnable);
+                    return true;
+                }
                 if (!mScroller.isFinished()) return true;
 
                 final boolean mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive();
@@ -309,10 +323,66 @@ public final class TerminalView extends View {
         return true;
     }
 
+    // ---- Pixel-smooth scrolling (Aetheris): scrollback moves per pixel, not per row. ----
+    /** Set false to get the original row-by-row scrolling. */
+    public boolean mSmoothScroll = true;
+
+    private boolean usePixelScroll() {
+        return mSmoothScroll && mEmulator != null && mRenderer != null
+            && !mEmulator.isAlternateBufferActive() && !mEmulator.isMouseTrackingActive();
+    }
+
+    /** Scroll position in px: 0 = bottom (live output), negative = into scrollback. mScrollRemainder is the 0..lineHeight part. */
+    private float currentPixelPos() {
+        return mTopRow * (float) mRenderer.mFontLineSpacing + mScrollRemainder;
+    }
+
+    private void scrollToPixel(float pos) {
+        final int lh = mRenderer.mFontLineSpacing;
+        final float min = -mEmulator.getScreen().getActiveTranscriptRows() * (float) lh;
+        pos = Math.max(min, Math.min(0f, pos));
+        int row = (int) Math.floor(pos / lh);
+        float off = pos - row * (float) lh;
+        if (row >= 0) { row = 0; off = 0f; }
+        setTopRow(row);
+        mScrollRemainder = off;
+        if (!awakenScrollBars()) invalidate();
+    }
+
+    private final Runnable mPixelScrollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mEmulator == null || mScroller.isFinished()) return;
+            if (!usePixelScroll()) { mScroller.abortAnimation(); return; }
+            final boolean more = mScroller.computeScrollOffset();
+            scrollToPixel(mScroller.getCurrY());
+            if (more) postOnAnimation(this); else snapToRow();
+        }
+    };
+
+    private final Runnable mSnapRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mScroller.isFinished()) snapToRow();
+        }
+    };
+
+    /** Settles a half-scrolled line onto the nearest row with a short animation. */
+    private void snapToRow() {
+        if (mScrollRemainder == 0f || !usePixelScroll()) return;
+        final int lh = mRenderer.mFontLineSpacing;
+        final int pos = Math.round(currentPixelPos());
+        final int min = -mEmulator.getScreen().getActiveTranscriptRows() * lh;
+        final int target = Math.max(min, Math.min(0, Math.round(pos / (float) lh) * lh));
+        if (target == pos) { mScrollRemainder = 0f; invalidate(); return; }
+        mScroller.startScroll(0, pos, 0, target - pos, 90);
+        postOnAnimation(mPixelScrollRunnable);
+    }
+
     // ---- Smooth output animation (Aetheris): new lines slide up and fade in. ----
     /** Set false to get instant, original Termux rendering. */
     public boolean mSmoothAnimations = true;
-    private static final int SMOOTH_DURATION_MS = 170;
+    private static final int SMOOTH_DURATION_MS = 260;
     private ValueAnimator mSmoothAnim;
     private float mSmoothProgress = 1f;
     private float mSlideStartPx = 0f;
@@ -351,7 +421,7 @@ public final class TerminalView extends View {
                 mSmoothProgress = 0f;
                 mSmoothAnim = ValueAnimator.ofFloat(0f, 1f);
                 mSmoothAnim.setDuration(SMOOTH_DURATION_MS);
-                mSmoothAnim.setInterpolator(new DecelerateInterpolator(1.6f));
+                mSmoothAnim.setInterpolator(new DecelerateInterpolator(2.4f));
                 mSmoothAnim.addUpdateListener(a -> {
                     mSmoothProgress = (float) a.getAnimatedValue();
                     invalidate();
@@ -1096,10 +1166,13 @@ public final class TerminalView extends View {
             }
 
             final float slide = mSmoothProgress < 1f ? mSlideStartPx * (1f - mSmoothProgress) : 0f;
-            final boolean translated = slide > 0.5f;
+            final float scrollOff = (mTopRow < 0 && mScrollRemainder > 0f && !isSelectingText() && usePixelScroll()) ? mScrollRemainder : 0f;
+            mRenderer.mDrawExtraRow = scrollOff > 0f;
+            final float dy = slide - scrollOff;
+            final boolean translated = Math.abs(dy) > 0.01f;
             if (translated) {
                 canvas.save();
-                canvas.translate(0, slide);
+                canvas.translate(0, dy);
             }
 
             mRenderer.render(mEmulator, canvas, mTopRow, sel[0], sel[1], sel[2], sel[3]);
@@ -1156,6 +1229,7 @@ public final class TerminalView extends View {
 
     public void setTopRow(int topRow, boolean updateEmulator) {
         mTopRow = topRow;
+        if (topRow == 0) mScrollRemainder = 0f;
         if (updateEmulator && mEmulator != null) {
             mEmulator.setTopRow(mTopRow);
         }

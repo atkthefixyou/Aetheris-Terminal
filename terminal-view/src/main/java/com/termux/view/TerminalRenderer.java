@@ -39,6 +39,8 @@ public final class TerminalRenderer {
 
     /** Syntax highlighting of default-coloured text (errors, warnings, URLs, paths). Off in the alternate buffer. */
     public boolean mSyntaxHighlight = true;
+    /** Draw one more row below the screen; used while the view is shifted up by a sub-row scroll offset. */
+    public boolean mDrawExtraRow = false;
     private int[] mHl = new int[0];
     private static final int HL_ERROR = 0xffff6b81, HL_WARN = 0xffe6c07b, HL_OK = 0xff7fe08a,
         HL_URL = 0xff61afef, HL_PATH = 0xff56b6c2;
@@ -67,7 +69,7 @@ public final class TerminalRenderer {
     public final void render(TerminalEmulator mEmulator, Canvas canvas, int topRow,
                              int selectionY1, int selectionY2, int selectionX1, int selectionX2) {
         final boolean reverseVideo = mEmulator.isReverseVideo();
-        final int endRow = topRow + mEmulator.mRows;
+        final int endRow = topRow + mEmulator.mRows + (mDrawExtraRow ? 1 : 0);
         final int columns = mEmulator.mColumns;
         final int cursorCol = mEmulator.getCursorCol();
         final int cursorRow = mEmulator.getCursorRow();
