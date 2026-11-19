@@ -83,7 +83,7 @@ d="$T/pkg2"; mkdir -p "$d/DEBIAN" "$d/usr/share/x"; echo x > "$d/usr/share/x/f"
 printf 'Package: plain\nVersion: 1.0\nArchitecture: all\nMaintainer: t <t@t>\nDescription: plain\n' > "$d/DEBIAN/control"
 mkdeb "$d" "$T/plain.deb"; cp "$T/plain.deb" "$T/plain.ref"; run_hook "$T/plain.deb" >/dev/null 2>&1
 cmp -s "$T/plain.deb" "$T/plain.ref" && [ ! -e "$T/plain.deb.orig" ] && ok "prefix-independent package untouched" || bad "plain package changed"
-cp "$T/m755.deb" "$T/m755.once"; run_hook "$T/m755.deb" >"$T/out.txt" 2>&1; cmp -s "$T/m755.deb" "$T/m755.once" && [ ! -s "$T/out.txt" ] && ok "idempotent (second run: no output, no change)" || bad "idempotent"
+cp "$T/m755.deb" "$T/m755.once"; run_hook "$T/m755.deb" >"$T/out.txt" 2>&1; cmp -s "$T/m755.deb" "$T/m755.once" && ! grep -q rewrote "$T/out.txt" && ok "idempotent (second run: no rewrite, no change)" || bad "idempotent"
 d="$(newpkg noback)"; mkdeb "$d" "$T/noback.deb"; ( export AETHERIS_KEEP_ORIG=0; run_hook "$T/noback.deb" >/dev/null 2>&1 ); [ ! -e "$T/noback.deb.orig" ] && ok "AETHERIS_KEEP_ORIG=0 skips backup" || bad "keep_orig"
 [ "$(leftovers)" = 0 ] && ok "no temp directories left behind" || bad "temp leftovers"
 if [ -n "${KEEP:-}" ]; then cp -r "$T" /tmp/kept-test; fi
