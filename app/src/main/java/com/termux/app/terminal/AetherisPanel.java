@@ -384,8 +384,23 @@ public class AetherisPanel {
 
     private static String trimEnd(String text) {
         if (text == null) return null;
-        // Bo dong dau hieu "─── ✔ ───" / "─── ✖ n ───" (khong thuoc output).
-        text = text.replaceAll("(?m)^[ \\t]*─{3} [✔✖][^\\n─]*─{3}[ \\t]*(\\r?\\n|$)", "");
-        return text.replaceAll("\\s+$", "");
+        // Bo cac dong dau hieu hoan tat lenh ("─── ✔ ───", "─── ✖ 1 ───"): chi gom ─, ✔/✖, so, khoang trang.
+        StringBuilder sb = new StringBuilder();
+        for (String line : text.split("\\r?\\n", -1)) {
+            if (isMarkerLine(line)) continue;
+            sb.append(line).append('\n');
+        }
+        return sb.toString().replaceAll("\\s+$", "");
+    }
+
+    private static boolean isMarkerLine(String line) {
+        boolean dash = false, mark = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '\u2500' || c == '\u2501' || c == '-') dash = true;
+            else if (c == '\u2714' || c == '\u2716' || c == '\u2713' || c == '\u2717' || c == '\uFE0F') mark = true;
+            else if (!(Character.isWhitespace(c) || Character.isDigit(c) || c == '\u00A0')) return false;
+        }
+        return dash && mark;
     }
 }

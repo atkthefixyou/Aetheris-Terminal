@@ -32,10 +32,10 @@ jobs:
           cp "$apk" aetheris.apk
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: aetheris
           path: aetheris.apk
+          archive: false
 
       - name: Publish release (latest)
         env:
