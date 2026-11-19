@@ -37,28 +37,29 @@
             android:paddingVertical="10dp"
             android:orientation="vertical"
             android:background="@drawable/aetheris_card_bg">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="❯ INPUT"
+            android:textColor="@color/aetheris_cyan"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:typeface="monospace" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
-
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="❯ INPUT"
-                android:textColor="@color/aetheris_cyan"
-                android:textStyle="bold"
-                android:textSize="13sp"
-                android:typeface="monospace" />
 
             <TextView
                 android:id="@+id/aetheris_cwd"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="10dp"
+                android:gravity="start"
                 android:singleLine="true"
                 android:ellipsize="start"
                 android:text="~"
@@ -161,7 +162,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
+                android:layout_centerInParent="true"
                 android:text="▣ OUTPUT"
                 android:textColor="@color/aetheris_violet"
                 android:textStyle="bold"
@@ -261,18 +262,38 @@
 
         </androidx.drawerlayout.widget.DrawerLayout>
 
-        <TextView
-            android:id="@+id/aetheris_exit"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="12dp"
             android:paddingVertical="6dp"
-            android:singleLine="true"
-            android:text="— chưa có lệnh nào"
-            android:textColor="#8A94B8"
-            android:textStyle="bold"
-            android:textSize="12sp"
-            android:typeface="monospace" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#4A5580" />
+
+            <TextView
+                android:id="@+id/aetheris_exit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="10dp"
+                android:singleLine="true"
+                android:text="— chưa có lệnh nào"
+                android:textColor="#8A94B8"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#4A5580" />
+        </LinearLayout>
 
         </LinearLayout>
 
@@ -284,38 +305,8 @@
             android:layout_marginHorizontal="4dp"
             android:background="@drawable/aetheris_toolbar_bg"
             android:clipToOutline="true"
-            android:layout_above="@+id/aetheris_footer" />
+            android:layout_alignParentBottom="true" />
 
-        <RelativeLayout
-            android:id="@+id/aetheris_footer"
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:paddingHorizontal="12dp"
-            android:layout_alignParentBottom="true">
-
-            <TextView
-                android:id="@+id/aetheris_footer_left"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_alignParentStart="true"
-                android:gravity="center_vertical"
-                android:text="@string/aetheris_footer_left"
-                android:textColor="@color/aetheris_violet"
-                android:textSize="12sp"
-                android:typeface="monospace" />
-
-            <TextView
-                android:id="@+id/aetheris_footer_right"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_alignParentEnd="true"
-                android:gravity="center_vertical"
-                android:text="@string/aetheris_footer_right"
-                android:textColor="@color/aetheris_cyan"
-                android:textSize="12sp"
-                android:textStyle="italic"
-                android:typeface="monospace" />
-        </RelativeLayout>
 
     </RelativeLayout>
 
