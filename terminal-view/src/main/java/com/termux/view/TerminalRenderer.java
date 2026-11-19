@@ -37,6 +37,12 @@ public final class TerminalRenderer {
 
     private final float[] asciiMeasures = new float[127];
 
+    /** Syntax highlighting of default-coloured text (errors, warnings, URLs, paths). Off in the alternate buffer. */
+    public boolean mSyntaxHighlight = true;
+    private int[] mHl = new int[0];
+    private static final int HL_ERROR = 0xffff6b81, HL_WARN = 0xffe6c07b, HL_OK = 0xff7fe08a,
+        HL_URL = 0xff61afef, HL_PATH = 0xff56b6c2;
+
     public TerminalRenderer(int textSize, Typeface typeface) {
         mTextSize = textSize;
         mTypeface = typeface;
@@ -87,6 +93,8 @@ public final class TerminalRenderer {
             TerminalRow lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row));
             final char[] line = lineObject.mText;
             final int charsUsedInLine = lineObject.getSpaceUsed();
+            final int[] hl = (mSyntaxHighlight && !mEmulator.isAlternateBufferActive()) ? buildHighlight(line, charsUsedInLine) : null;
+            int lastRunHl = 0;
 
             long lastRunStyle = 0;
             boolean lastRunInsideCursor = false;
@@ -103,6 +111,8 @@ public final class TerminalRenderer {
                 final int charsForCodePoint = charIsHighsurrogate ? 2 : 1;
                 final int codePoint = charIsHighsurrogate ? Character.toCodePoint(charAtIndex, line[currentCharIndex + 1]) : charAtIndex;
                 final long style = lineObject.getStyle(column);
+                final int hlColor = (hl != null && currentCharIndex < charsUsedInLine
+                    && TextStyle.decodeForeColor(style) == TextStyle.COLOR_INDEX_FOREGROUND) ? hl[currentCharIndex] : 0;
                 if (TextStyle.isTerminalBitmap(style)) {
                     Bitmap bitmap = mEmulator.getScreen().getSixelBitmap(style);
                     if (bitmap != null) {
@@ -116,6 +126,7 @@ public final class TerminalRenderer {
                     measuredWidthForRun = 0.f;
                     lastRunStyle = 0;
                     lastRunInsideCursor = false;
+                    lastRunHl = 0;
                     lastRunStartColumn = column + 1;
                     lastRunStartIndex = currentCharIndex;
                     lastRunFontWidthMismatch = false;
@@ -134,7 +145,7 @@ public final class TerminalRenderer {
                     currentCharIndex, charsForCodePoint);
                 final boolean fontWidthMismatch = Math.abs(measuredCodePointWidth / mFontWidth - codePointWcWidth) > 0.01;
 
-                if (style != lastRunStyle || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
+                if (style != lastRunStyle || hlColor != lastRunHl || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
                     if (column == 0 || column == lastRunStartColumn) {
                         // Skip first column as there is nothing to draw, just record the current style.
                     } else {
@@ -147,9 +158,10 @@ public final class TerminalRenderer {
                         }
                         drawTextRun(canvas, line, palette, heightOffset, lastRunStartColumn, columnWidthSinceLastRun,
                             lastRunStartIndex, charsSinceLastRun, measuredWidthForRun,
-                            cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection);
+                            cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection, lastRunHl);
                     }
                     measuredWidthForRun = 0.f;
+                    lastRunHl = hlColor;
                     lastRunStyle = style;
                     lastRunInsideCursor = insideCursor;
                     lastRunInsideSelection = insideSelection;
@@ -175,14 +187,61 @@ public final class TerminalRenderer {
                 invertCursorTextColor = true;
             }
             drawTextRun(canvas, line, palette, heightOffset, lastRunStartColumn, columnWidthSinceLastRun, lastRunStartIndex, charsSinceLastRun,
-                measuredWidthForRun, cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection);
+                measuredWidthForRun, cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection, lastRunHl);
         }
+    }
+
+    /** Fills mHl[charIndex] with an ARGB colour (0 = none) per whitespace-delimited token. */
+    private int[] buildHighlight(char[] line, int used) {
+        if (mHl.length < used) mHl = new int[Math.max(used, 256)];
+        final int[] out = mHl;
+        java.util.Arrays.fill(out, 0, used, 0);
+        int i = 0;
+        while (i < used) {
+            while (i < used && line[i] <= ' ') i++;
+            final int start = i;
+            while (i < used && line[i] > ' ') i++;
+            final int len = i - start;
+            if (len == 0) continue;
+            final int color = classifyToken(line, start, len);
+            if (color != 0) java.util.Arrays.fill(out, start, i, color);
+        }
+        return out;
+    }
+
+    private static int classifyToken(char[] c, int s, int len) {
+        final char c0 = c[s];
+        if (startsWith(c, s, len, "http://") || startsWith(c, s, len, "https://")) return HL_URL;
+        if (c0 == '/' && len > 1 || startsWith(c, s, len, "~/") || startsWith(c, s, len, "./") || startsWith(c, s, len, "../")) return HL_PATH;
+        if (startsWith(c, s, len, "E:") || containsIgnoreCase(c, s, len, "error") || containsIgnoreCase(c, s, len, "fatal")
+            || containsIgnoreCase(c, s, len, "failed") || containsIgnoreCase(c, s, len, "denied")
+            || containsIgnoreCase(c, s, len, "cannot")) return HL_ERROR;
+        if (startsWith(c, s, len, "W:") || containsIgnoreCase(c, s, len, "warning") || containsIgnoreCase(c, s, len, "warn:")) return HL_WARN;
+        if (containsIgnoreCase(c, s, len, "success") || containsIgnoreCase(c, s, len, "complete") || (len == 4 && containsIgnoreCase(c, s, len, "done"))) return HL_OK;
+        return 0;
+    }
+
+    private static boolean startsWith(char[] c, int s, int len, String p) {
+        if (len < p.length()) return false;
+        for (int k = 0; k < p.length(); k++) if (c[s + k] != p.charAt(k)) return false;
+        return true;
+    }
+
+    private static boolean containsIgnoreCase(char[] c, int s, int len, String p) {
+        final int n = p.length();
+        for (int k = 0; k + n <= len; k++) {
+            int m = 0;
+            while (m < n && Character.toLowerCase(c[s + k + m]) == p.charAt(m)) m++;
+            if (m == n) return true;
+        }
+        return false;
     }
 
     private void drawTextRun(Canvas canvas, char[] text, int[] palette, float y, int startColumn, int runWidthColumns,
                              int startCharIndex, int runWidthChars, float mes, int cursor, int cursorStyle,
-                             long textStyle, boolean reverseVideo) {
+                             long textStyle, boolean reverseVideo, int highlightColor) {
         int foreColor = TextStyle.decodeForeColor(textStyle);
+        if (highlightColor != 0 && foreColor == TextStyle.COLOR_INDEX_FOREGROUND) foreColor = highlightColor;
         final int effect = TextStyle.decodeEffect(textStyle);
         int backColor = TextStyle.decodeBackColor(textStyle);
         final boolean bold = (effect & (TextStyle.CHARACTER_ATTRIBUTE_BOLD | TextStyle.CHARACTER_ATTRIBUTE_BLINK)) != 0;

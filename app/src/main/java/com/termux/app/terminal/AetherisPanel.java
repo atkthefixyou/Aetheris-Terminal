@@ -65,7 +65,9 @@ public class AetherisPanel {
         mBranch = activity.findViewById(R.id.aetheris_branch);
         mState = activity.findViewById(R.id.aetheris_state);
         mExit = activity.findViewById(R.id.aetheris_exit);
-        activity.findViewById(R.id.aetheris_copy_output).setOnClickListener(v -> copyOutput());
+        View copyBtn = activity.findViewById(R.id.aetheris_copy_output);
+        copyBtn.setOnClickListener(v -> copyAllOutput());
+        copyBtn.setOnLongClickListener(v -> { copyOutput(); return true; });
 
         mInput = activity.findViewById(R.id.aetheris_input);
         mInput.setOnEditorActionListener((v, actionId, ev) -> { submit(); return true; });
@@ -327,6 +329,25 @@ public class AetherisPanel {
         return String.format(Locale.US, "%.3fs", ms / 1000.0);
     }
 
+    /** Copies the entire terminal output: whole scrollback transcript plus the visible screen. */
+    private void copyAllOutput() {
+        TerminalSession session = mActivity.getCurrentSession();
+        TerminalEmulator emu = session == null ? null : session.getEmulator();
+        String text = null;
+        if (emu != null) {
+            int t = emu.getScreen().getActiveTranscriptRows();
+            text = trimEnd(emu.getScreen().getSelectedText(0, -t, emu.mColumns, emu.mRows - 1));
+        }
+        if (text == null || text.isEmpty()) {
+            Toast.makeText(mActivity, "Không có output để chép", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ClipboardManager cm = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(ClipData.newPlainText("Aetheris output", text));
+        Toast.makeText(mActivity, "Đã chép toàn bộ output (" + text.split("\\n", -1).length + " dòng)", Toast.LENGTH_SHORT).show();
+    }
+
+    /** Copies only the output of the last command (long-press on the copy button). */
     private void copyOutput() {
         TerminalSession session = mActivity.getCurrentSession();
         State st = session == null ? null : mStates.get(session);
