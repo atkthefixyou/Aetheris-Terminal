@@ -31,7 +31,7 @@ export LC_ALL=C
 
 command -v dpkg-deb >/dev/null 2>&1 || { echo "aetheris: dpkg-deb not found" >&2; exit 1; }
 
-DEB_OPTS=(-Zgzip -z3)
+DEB_OPTS=(-Zgzip -z1)
 dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group' && DEB_OPTS=(--root-owner-group "${DEB_OPTS[@]}")
 
 OLDRE="${OLD//./\\.}"
@@ -178,7 +178,10 @@ else
 fi
 
 rc=0
+total=${#debs[@]}; i=0
 for d in "${debs[@]}"; do
+  i=$((i+1))
+  echo "aetheris: [$i/$total] checking $(basename "$d") ($(( $(stat -c %s "$d" 2>/dev/null || echo 0) / 1048576 )) MB) - large packages can take a few minutes..." >&2
   rewrite_one "$d" || rc=1
 done
 exit $rc
