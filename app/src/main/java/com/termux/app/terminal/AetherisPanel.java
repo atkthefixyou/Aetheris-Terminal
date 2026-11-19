@@ -82,7 +82,9 @@ public class AetherisPanel {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             @Override public void afterTextChanged(Editable e) { sDraft = e.toString(); }
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (mInternalEdit || count != 1 || before != 0) return;
+                if (mInternalEdit) return;
+                if (forwardLive(s, start, before, count)) return;
+                if (count != 1 || before != 0) return;
                 try {
                     Boolean ctrl = mActivity.getExtraKeysView().readSpecialButton(SpecialButton.CTRL, true);
                     if (Boolean.TRUE.equals(ctrl)) {
@@ -135,6 +137,24 @@ public class AetherisPanel {
         mInput.setAlpha(alt ? 0.4f : 1f);
         mInput.setHint(alt ? "Chương trình toàn màn hình: gõ trực tiếp" : "Nhập lệnh…");
         if (alt) tv.requestFocus(); else mInput.requestFocus();
+    }
+
+    /** Lenh dang chay (khong phai vim/htop): chu go vao INPUT gui thang vao lenh, de tra loi cac cau hoi [Y/n]. */
+    private boolean forwardLive(CharSequence s, int start, int before, int count) {
+        TerminalSession sess = mActivity.getCurrentSession();
+        State st = sess == null ? null : mStates.get(sess);
+        if (st == null || !st.running || mAlt) return false;
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < before; i++) out.append('\u007f');
+        for (int i = start; i < start + count && i < s.length(); i++) {
+            char c = s.charAt(i);
+            out.append(c == '\n' ? '\r' : c);
+        }
+        if (out.length() == 0) return false;
+        mInternalEdit = true;
+        try { mInput.getText().delete(0, mInput.getText().length()); } finally { mInternalEdit = false; }
+        sess.write(out.toString());
+        return true;
     }
 
     private void submit() {

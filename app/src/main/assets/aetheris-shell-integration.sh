@@ -26,6 +26,8 @@ if [ -n "$BASH_VERSION" ]; then
   }
   PROMPT_COMMAND="_aeth_status;${PROMPT_COMMAND:+$PROMPT_COMMAND;}_aeth_precmd"
   PS0=$'\033]133;C\007'
+  # Bat echo khi lenh chay de thay cau tra loi go vao; precmd tat lai.
+  [ -z "$AETHERIS_PLAIN" ] && PS0="$PS0"'$(stty echo 2>/dev/null)'
   if [ -z "$AETHERIS_PLAIN" ]; then PS1=''; PS2=''; stty -echo 2>/dev/null; fi
 elif [ -n "$ZSH_VERSION" ]; then
   _aeth_status() { _AETH_S=$?; }
@@ -36,7 +38,7 @@ elif [ -n "$ZSH_VERSION" ]; then
     if [ -z "$AETHERIS_PLAIN" ]; then PROMPT=''; RPROMPT=''; PS1=''; stty -echo 2>/dev/null; fi
     return $_AETH_S
   }
-  _aeth_preexec() { _AETH_RAN=1; printf '\033]133;C\007'; }
+  _aeth_preexec() { _AETH_RAN=1; printf '\033]133;C\007'; [ -z "$AETHERIS_PLAIN" ] && stty echo 2>/dev/null; }
   precmd_functions=(_aeth_status $precmd_functions _aeth_precmd)
   preexec_functions=(_aeth_preexec $preexec_functions)
   if [ -z "$AETHERIS_PLAIN" ]; then PROMPT=''; RPROMPT=''; unsetopt zle 2>/dev/null; stty -echo 2>/dev/null; fi
