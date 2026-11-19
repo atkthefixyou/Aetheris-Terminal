@@ -383,6 +383,9 @@ public class AetherisPanel {
     }
 
     private static String trimEnd(String text) {
-        return text == null ? null : text.replaceAll("\\s+$", "");
+        if (text == null) return null;
+        // Bo dong dau hieu "─── ✔ ───" / "─── ✖ n ───" (khong thuoc output).
+        text = text.replaceAll("(?m)^[ \\t]*─{3} [✔✖][^\\n─]*─{3}[ \\t]*(\\r?\\n|$)", "");
+        return text.replaceAll("\\s+$", "");
     }
 }
