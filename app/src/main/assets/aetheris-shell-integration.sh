@@ -9,8 +9,8 @@ _AETH_H=$HISTCMD
 printf '\033[2J\033[3J\033[H'
 # Dau hieu lenh chay xong (sau OSC 133;D nen khong lot vao output duoc copy).
 _aeth_done() {
-  [ -n "$AETHERIS_PLAIN" ] && return 0
-  if [ "$1" -eq 0 ]; then printf '\033[2;32m─── ✔ ───\033[0m\n'; else printf '\033[2;31m─── ✖ %s ───\033[0m\n' "$1"; fi
+  # Dau hieu hoan tat do app in mot lan sau ca khoi lenh (AetherisPanel); khong in o day.
+  return 0
 }
 _aeth_info() {
   printf '\033]6973;%s;%s\007' "$PWD" "$(git symbolic-ref --short -q HEAD 2>/dev/null)"

@@ -66,6 +66,8 @@ public class AetherisPanel {
         mBranch = activity.findViewById(R.id.aetheris_branch);
         mState = activity.findViewById(R.id.aetheris_state);
         mExit = activity.findViewById(R.id.aetheris_exit);
+        sPanel = new java.lang.ref.WeakReference<>(this);
+        activity.findViewById(R.id.aetheris_clear_output).setOnClickListener(v -> clearOutput());
         View copyBtn = activity.findViewById(R.id.aetheris_copy_output);
         copyBtn.setOnClickListener(v -> copyAllOutput());
         copyBtn.setOnLongClickListener(v -> { copyOutput(); return true; });
@@ -137,6 +139,28 @@ public class AetherisPanel {
         mInput.setAlpha(alt ? 0.4f : 1f);
         mInput.setHint(alt ? "Chương trình toàn màn hình: gõ trực tiếp" : "Nhập lệnh…");
         if (alt) tv.requestFocus(); else mInput.requestFocus();
+    }
+
+    private static java.lang.ref.WeakReference<AetherisPanel> sPanel = new java.lang.ref.WeakReference<>(null);
+
+    /** Ghi thang chuoi vao man hinh terminal (nhu output cua lenh), tren luong chinh. */
+    private static void appendLocal(final TerminalSession session, final String text) {
+        sHandler.post(() -> {
+            TerminalEmulator e = session.getEmulator();
+            if (e == null) return;
+            byte[] b = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            e.append(b, b.length);
+            AetherisPanel p = sPanel.get();
+            if (p != null && session == p.mActivity.getCurrentSession()) p.mActivity.getTerminalView().onScreenUpdated();
+        });
+    }
+
+    private void clearOutput() {
+        TerminalSession session = mActivity.getCurrentSession();
+        if (session == null) return;
+        State st = mStates.get(session);
+        if (st != null) { st.startAbs = -1; st.endAbs = -1; st.submitAbs = -1; }
+        appendLocal(session, "\033[2J\033[3J\033[H");
     }
 
     /** Lenh dang chay (khong phai vim/htop): chu go vao INPUT gui thang vao lenh, de tra loi cac cau hoi [Y/n]. */
@@ -454,7 +478,13 @@ public class AetherisPanel {
                 Queue dq = mQueues.get(session);
                 if (dq != null) {
                     if (st.exit == 130) dq.pending.clear(); // Ctrl+C dung ca chuoi
-                    else sHandler.post(() -> pump(session));
+                    if (!dq.pending.isEmpty()) {
+                        sHandler.post(() -> pump(session));
+                    } else {
+                        // Het ca khoi lenh: in dau hieu hoan tat mot lan.
+                        appendLocal(session, st.exit == 0 ? "\033[2;32m\u2500\u2500\u2500 \u2714 \u2500\u2500\u2500\033[0m\r\n"
+                                : "\033[2;31m\u2500\u2500\u2500 \u2716 " + st.exit + " \u2500\u2500\u2500\033[0m\r\n");
+                    }
                 }
             }
         }
