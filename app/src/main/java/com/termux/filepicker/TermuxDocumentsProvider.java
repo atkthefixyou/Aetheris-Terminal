@@ -147,6 +147,22 @@ public class TermuxDocumentsProvider extends DocumentsProvider {
     }
 
     @Override
+    public String renameDocument(String documentId, String displayName) throws FileNotFoundException {
+        if (displayName == null || displayName.isEmpty() || displayName.contains("/")) {
+            throw new FileNotFoundException("Invalid name: " + displayName);
+        }
+        File file = getFileForDocId(documentId);
+        File target = new File(file.getParentFile(), displayName);
+        if (target.exists()) {
+            throw new FileNotFoundException("Target already exists: " + target.getPath());
+        }
+        if (!file.renameTo(target)) {
+            throw new FileNotFoundException("Failed to rename document with id " + documentId);
+        }
+        return getDocIdForFile(target);
+    }
+
+    @Override
     public String getDocumentType(String documentId) throws FileNotFoundException {
         File file = getFileForDocId(documentId);
         return getMimeType(file);
@@ -249,7 +265,7 @@ public class TermuxDocumentsProvider extends DocumentsProvider {
         } else if (file.canWrite()) {
             flags |= Document.FLAG_SUPPORTS_WRITE;
         }
-        if (file.getParentFile().canWrite()) flags |= Document.FLAG_SUPPORTS_DELETE;
+        if (file.getParentFile().canWrite()) flags |= Document.FLAG_SUPPORTS_DELETE | Document.FLAG_SUPPORTS_RENAME;
 
         final String displayName = file.getName();
         final String mimeType = getMimeType(file);
