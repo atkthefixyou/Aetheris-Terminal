@@ -121,7 +121,10 @@ public class AetherisPanel {
     public void checkMode(TerminalSession session) {
         if (session != mActivity.getCurrentSession()) return;
         TerminalEmulator emu = session.getEmulator();
-        boolean alt = emu != null && emu.isAlternateBufferActive();
+        State cs = mStates.get(session);
+        // Lenh chay lau (rish, apt hoi Y/n, python...): go truc tiep vao terminal de phim (Backspace, mui ten, Ctrl) hoat dong dung.
+        boolean longRun = cs != null && cs.running && (System.nanoTime() - cs.startNs) > 700_000_000L;
+        boolean alt = (emu != null && emu.isAlternateBufferActive()) || longRun;
         if (alt != mAlt) {
             mAlt = alt;
             applyMode(alt);
@@ -137,7 +140,7 @@ public class AetherisPanel {
         tv.mTextInputDisabled = !alt;
         mInput.setEnabled(!alt);
         mInput.setAlpha(alt ? 0.4f : 1f);
-        mInput.setHint(alt ? "Chương trình toàn màn hình: gõ trực tiếp" : "Nhập lệnh…");
+        mInput.setHint(alt ? "Đang chạy: gõ trực tiếp vào OUTPUT" : "Nhập lệnh…");
         if (alt) tv.requestFocus(); else mInput.requestFocus();
     }
 
@@ -458,6 +461,12 @@ public class AetherisPanel {
                 Queue aq = mQueues.get(session);
                 if (aq != null) aq.awaitingStart = false;
                 st.startNs = System.nanoTime();
+                final long runStart = st.startNs;
+                sHandler.postDelayed(() -> {
+                    AetherisPanel pn = sPanel.get();
+                    State cs = mStates.get(session);
+                    if (pn != null && cs != null && cs.running && cs.startNs == runStart) pn.checkMode(session);
+                }, 800);
                 st.startAbs = -1;
                 st.endAbs = -1;
                 if (emu != null && !emu.isAlternateBufferActive()) {
