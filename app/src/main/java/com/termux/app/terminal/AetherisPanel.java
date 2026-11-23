@@ -37,6 +37,8 @@ public class AetherisPanel {
         String cwd = "";
         String branch = "";
         boolean running;
+        boolean rish;      // dang trong phien rish (shell Android qua Shizuku)
+        boolean rishInit;  // da nhan prompt dau tien cua rish
         int exit = -1;
         long durationMs;
         long startNs;
@@ -123,7 +125,7 @@ public class AetherisPanel {
         TerminalEmulator emu = session.getEmulator();
         State cs = mStates.get(session);
         // Lenh chay lau (rish, apt hoi Y/n, python...): go truc tiep vao terminal de phim (Backspace, mui ten, Ctrl) hoat dong dung.
-        boolean longRun = cs != null && cs.running && (System.nanoTime() - cs.startNs) > 700_000_000L;
+        boolean longRun = cs != null && cs.running && !cs.rish && (System.nanoTime() - cs.startNs) > 700_000_000L;
         boolean alt = (emu != null && emu.isAlternateBufferActive()) || longRun;
         if (alt != mAlt) {
             mAlt = alt;
@@ -166,11 +168,18 @@ public class AetherisPanel {
         appendLocal(session, "\033[2J\033[3J\033[H");
     }
 
+    // Prompt cua shell trong rish phat OSC: 133;D;<exit>;R (R = remote) va 6973;<cwd>; moi lan hien prompt.
+    private static final String RISH_INIT = "PS1=\"$(printf '\\001\\033]133;D;')\"'$?'\"$(printf ';R\\007\\033]6973;')\"'$PWD'\"$(printf ';\\007\\001')\"";
+
+    private static boolean isRishLaunch(String cmd) {
+        return cmd.matches("^(sh |bash )?(\\./|~/|/[\\w./-]*/)?rish(\\s.*)?$");
+    }
+
     /** Lenh dang chay (khong phai vim/htop): chu go vao INPUT gui thang vao lenh, de tra loi cac cau hoi [Y/n]. */
     private boolean forwardLive(CharSequence s, int start, int before, int count) {
         TerminalSession sess = mActivity.getCurrentSession();
         State st = sess == null ? null : mStates.get(sess);
-        if (st == null || !st.running || mAlt) return false;
+        if (st == null || !st.running || st.rish || mAlt) return false;
         StringBuilder out = new StringBuilder();
         for (int i = 0; i < before; i++) out.append('\u007f');
         for (int i = start; i < start + count && i < s.length(); i++) {
@@ -204,6 +213,26 @@ public class AetherisPanel {
         State cur = mStates.get(session);
         boolean busy = cur != null && cur.running;
         boolean alt = emu != null && emu.isAlternateBufferActive();
+        if (cur != null && cur.rish) {
+            // Trong rish: gui ca khoi vao rish mot luot.
+            session.write(line.replace("\r\n", "\r").replace('\n', '\r') + "\r");
+            return;
+        }
+        if (!busy && !alt && isRishLaunch(line.trim().split("\\n", 2)[0])) {
+            String[] parts = line.trim().split("\\n", 2);
+            State rs = mStates.get(session);
+            if (rs == null) { rs = new State(); mStates.put(session, rs); }
+            rs.rish = true;
+            rs.rishInit = false;
+            Queue rq = mQueues.get(session);
+            if (rq != null) rq.pending.clear();
+            session.write(parts[0] + "\r" + RISH_INIT + "\r");
+            if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+                final String rest = parts[1].replace("\r\n", "\r").replace('\n', '\r') + "\r";
+                sHandler.postDelayed(() -> session.write(rest), 1500);
+            }
+            return;
+        }
         if (busy || alt) {
             // Chuong trinh dang chay doc stdin: gui nguyen van.
             session.write(line.replace("\r\n", "\r").replace('\n', '\r') + "\r");
@@ -472,7 +501,15 @@ public class AetherisPanel {
                 if (emu != null && !emu.isAlternateBufferActive()) {
                     st.startAbs = emu.getCursorRow() + emu.getScreen().getActiveTranscriptRows();
                 }
+            } else if (kind == 'D' && param.endsWith(";R")) {
+                // Prompt cua rish: lenh trong rish vua xong, khong ket thuc phien.
+                if (st.rish && !st.rishInit) {
+                    st.rishInit = true;
+                    appendLocal(session, "\033[2J\033[3J\033[H"); // xoa dong echo cua lenh khoi tao
+                }
             } else if (kind == 'D' && st.running) {
+                st.rish = false;
+                st.rishInit = false;
                 st.running = false;
                 st.durationMs = (System.nanoTime() - st.startNs) / 1_000_000L;
                 st.exit = 0;
@@ -521,7 +558,7 @@ public class AetherisPanel {
             mBranch.setVisibility(android.view.View.VISIBLE);
         }
 
-        mState.setText(st.running ? "● RUNNING" : "● READY");
+        mState.setText(st.rish ? "● RISH" : st.running ? "● RUNNING" : "● READY");
         mState.setTextColor(st.running ? YELLOW : GREEN);
 
         if (st.exit < 0) {
